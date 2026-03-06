@@ -1,0 +1,138 @@
+/* Cart Styles */
+.cart-item-image {
+  transition: transform 0.2s ease;
+}
+
+.cart-item-image:hover {
+  transform: scale(1.05);
+}
+
+.input-group-sm .form-control {
+  text-align: center;
+  font-weight: 500;
+  background-color: #fff;
+}
+
+.input-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.input-group-sm .btn:hover {
+  background-color: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+}
+
+.cart-action-btn {
+  transition: all 0.2s ease;
+}
+
+.cart-action-btn:hover {
+  transform: scale(1.1);
+}
+
+.empty-cart-container {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.empty-cart-icon {
+  font-size: 4rem;
+  color: var(--bs-gray-400);
+  margin-bottom: 1rem;
+}
+
+/* Product Image Container */
+.cart-product-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Price Display */
+.price {
+  color: var(--bs-primary);
+  font-weight: 500;
+}
+
+/* Cart Summary Card */
+.cart-summary-card {
+  position: sticky;
+  top: 1rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .cart-product-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .input-group-sm {
+    width: 120px !important;
+  }
+}
+
+/* Animation for removing items */
+.cart-item {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cart-item.removing {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* Hover effects for action buttons */
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Payment methods section */
+.payment-methods {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.payment-methods:hover {
+  opacity: 1;
+}
+
+/* Cart header */
+.cart-header {
+  background: linear-gradient(45deg, var(--bs-primary), var(--bs-secondary));
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Coupon section */
+.coupon-section {
+  border-left: 4px solid var(--bs-primary);
+  padding-left: 1rem;
+}
+
+/* Continue shopping button */
+.continue-shopping {
+  transition: all 0.2s ease;
+}
+
+.continue-shopping:hover {
+  transform: translateX(-5px);
+}
+
+/* Checkout button */
+.checkout-button {
+  transition: all 0.2s ease;
+}
+
+.checkout-button:hover {
+  transform: translateX(5px);
+} 
