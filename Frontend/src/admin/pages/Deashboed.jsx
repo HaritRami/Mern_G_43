@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import PageTitle from "../components/PageTitle";
-
+import Cookies from "js-cookie";
 const Dashboard = () => {
     const [userCount, setUserCount] = useState(0);
     const [productCount, setProductCount] = useState(0);
@@ -44,84 +44,104 @@ const Dashboard = () => {
         }
     };
 
-    const fetchProductCount = async () => {
-        try {
-            const savedUser = JSON.parse(localStorage.getItem("user"));
-            const response = await axios.get(`${API_URL}/product`, {
-                headers: {
-                    Authorization: `Bearer ${savedUser.tokens.accessToken}`
-                }
-            });
+   const fetchProductCount = async () => {
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = Cookies.get("userId");
 
-            if (response.data && response.data.success) {
-                setProductCount(response.data.pagination.total);
-            }
-        } catch (error) {
-            console.error('Error fetching product count:', error);
-            toast.error('Error fetching product count');
-        } finally {
-            setLoading(prev => ({ ...prev, products: false }));
-        }
-    };
+    const response = await axios.get(`${API_URL}/product`, {
+      headers: {
+        Authorization: `Bearer ${savedUser.tokens.accessToken}`
+      }
+    });
+
+    if (response.data && response.data.success) {
+      const filtered = response.data.data.filter(
+        (item) => item.userId?.toString() === userId?.toString()
+      );
+
+      setProductCount(filtered.length);
+    }
+  } catch (error) {
+    toast.error('Error fetching product count');
+  } finally {
+    setLoading(prev => ({ ...prev, products: false }));
+  }
+};
 
     const fetchCategoryCount = async () => {
-        try {
-            const savedUser = JSON.parse(localStorage.getItem("user"));
-            const response = await axios.get(`${API_URL}/category`, {
-                headers: {
-                    Authorization: `Bearer ${savedUser.tokens.accessToken}`
-                }
-            });
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = Cookies.get("userId");
 
-            if (response.data && response.data.success) {
-                setCategoryCount(response.data.pagination.total);
-            }
-        } catch (error) {
-            console.error('Error fetching category count:', error);
-            toast.error('Error fetching category count');
-        } finally {
-            setLoading(prev => ({ ...prev, categories: false }));
-        }
-    };
+    const response = await axios.get(`${API_URL}/category`, {
+      headers: {
+        Authorization: `Bearer ${savedUser.tokens.accessToken}`
+      }
+    });
+
+    if (response.data && response.data.success) {
+      const filtered = response.data.data.filter(
+        (item) => item.userId?.toString() === userId?.toString()
+      );
+
+      setCategoryCount(filtered.length);
+    }
+  } catch (error) {
+    toast.error('Error fetching category count');
+  } finally {
+    setLoading(prev => ({ ...prev, categories: false }));
+  }
+};
 
     const fetchRecentProducts = async () => {
-      debugger;
-        try {
-            const savedUser = JSON.parse(localStorage.getItem("user"));
-            const response = await axios.get(`${API_URL}/product?page=1&limit=5`, {
-                headers: {
-                    Authorization: `Bearer ${savedUser.tokens.accessToken}`
-                }
-            });
+  debugger;
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = Cookies.get("userId");
 
-            if (response.data && response.data.success) {
-                setRecentProducts(response.data.data);
-                console.log(recentProducts);
-                
-            }
-        } catch (error) {
-            console.error('Error fetching recent products:', error);
-            toast.error('Error fetching recent products');
-        }
-    };
+    const response = await axios.get(`${API_URL}/product?page=1&limit=5`, {
+      headers: {
+        Authorization: `Bearer ${savedUser.tokens.accessToken}`
+      }
+    });
 
-    const fetchRecentCategories = async () => {
-        try {
-            const savedUser = JSON.parse(localStorage.getItem("user"));
-            const response = await axios.get(`${API_URL}/category?page=1&limit=5`, {
-                headers: {
-                    Authorization: `Bearer ${savedUser.tokens.accessToken}`
-                }
-            });
+    if (response.data && response.data.success) {
+      const filteredProducts = response.data.data.filter(
+        (item) => item.userId?.toString() === userId?.toString()
+      );
 
-            if (response.data && response.data.success) {
-                setRecentCategories(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching recent categories:', error);
-            toast.error('Error fetching recent categories');
-        }
-    };
+      setRecentProducts(filteredProducts);
+      console.log(filteredProducts);
+    }
+  } catch (error) {
+    console.error('Error fetching recent products:', error);
+    toast.error('Error fetching recent products');
+  }
+};
+
+   const fetchRecentCategories = async () => {
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = Cookies.get("userId");
+
+    const response = await axios.get(`${API_URL}/category?page=1&limit=5`, {
+      headers: {
+        Authorization: `Bearer ${savedUser.tokens.accessToken}`
+      }
+    });
+
+    if (response.data && response.data.success) {
+      const filtered = response.data.data.filter(
+        (item) => item.userId?.toString() === userId?.toString()
+      );
+
+      setRecentCategories(filtered);
+    }
+  } catch (error) {
+    toast.error('Error fetching recent categories');
+  }
+};
 
     return (
         <>

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Swal from 'sweetalert2';
 
 const checkoutStyles = `
   .checkout-header {
@@ -147,7 +148,8 @@ const CheckoutView = () => {
     billingCountry: '',
     billingState: '',
     billingZip: '',
-    paymentMethod: 'credit',
+    paymentMethod: 'razorpay',
+    // card fields retained for future use but hidden
     cardName: '',
     cardNumber: '',
     expirationMonth: '',
@@ -227,49 +229,135 @@ const CheckoutView = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleRazorpay = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const authConfig = getAuthConfig();
-    if (!authConfig) return;
+    try {
+      const authConfig = getAuthConfig();
+      if (!authConfig) return;
 
-    const amount = totalPrice - discount;
+      const amount = totalPrice - discount;
 
-    const { data } = await axios.post("http://localhost:5000/api/payment/razor/create-order", {
-      amount
-    }, authConfig);
+      const { data } = await axios.post("http://localhost:5000/api/payment/razor/create-order", {
+        amount
+      }, authConfig);
 
-    const options = {
-     key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-      amount: data.order.amount,
-      currency: "INR",
-      name: "NextMart Store",
-      description: "Order Payment",
-      order_id: data.order.id,
-      handler: function (response) {
-        toast.success("Payment Successful!");
-        navigate('/order-confirmation');
-      },
-      prefill: {
-        email: formData.email,
-        contact: formData.mobile
-      }
-    };
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount: data.order.amount,
+        currency: "INR",
+        name: "NextMart Store",
+        description: "Order Payment",
+        order_id: data.order.id,
+        handler: async function (response) {
+          toast.success("Payment Successful!");
+          // create order record on server
+          try {
+            const savedUser = JSON.parse(localStorage.getItem("user"));
+            const orderPayload = {
+              userId: [savedUser.id],
+              orderId: "order_" + Date.now(),
+              paymentId: response.razorpay_payment_id,
+              paymentStatus: "PAID",
+              deliveryAddress: {
+                address_line: formData.shippingAddress1 + (formData.shippingAddress2 ? ", " + formData.shippingAddress2 : ""),
+                city: formData.shippingState,
+                state: formData.shippingState,
+                country: formData.shippingCountry,
+                mobile: formData.mobile
+              },
+              subTotalAmt: totalPrice,
+              totalAmt: totalPrice - discount,
+            };
+            const resp = await axios.post("http://localhost:5000/api/order", orderPayload, authConfig);
+            localStorage.setItem('lastOrder', JSON.stringify(resp.data.newOrder));
+            // show Swal and then redirect
+            await Swal.fire({
+              icon: 'success',
+              title: 'Order placed successfully!',
+              text: 'Redirecting to tracking page...',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            navigate(`/track/${resp.data.newOrder._id}`);
+          } catch (err) {
+            console.error('Error saving order', err);
+          }
+        },
+        prefill: {
+          email: formData.email,
+          contact: formData.mobile
+        }
+      };
 
-    console.log("Options = ",options);
-    
+      const rzp1 = new window.Razorpay(options);
+      rzp1.open();
+    } catch (error) {
+      console.error('Razorpay order error', error.response || error);
+      toast.error(
+        error.response?.data?.message ||
+        JSON.stringify(error.response?.data) ||
+        "Payment Failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const rzp1 = new window.Razorpay(options);
-    rzp1.open();
+  const handleCod = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const authConfig = getAuthConfig();
+      if (!authConfig) return;
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      const orderPayload = {
+        userId: [savedUser.id],
+        orderId: "order_" + Date.now(),
+        paymentStatus: "COD",
+        deliveryAddress: {
+          address_line: formData.shippingAddress1 + (formData.shippingAddress2 ? ", " + formData.shippingAddress2 : ""),
+          city: formData.shippingState,
+          state: formData.shippingState,
+          country: formData.shippingCountry,
+          mobile: formData.mobile
+        },
+        subTotalAmt: totalPrice,
+        totalAmt: totalPrice - discount,
+      };
+      const resp = await axios.post("http://localhost:5000/api/order", orderPayload, authConfig);
+      localStorage.setItem('lastOrder', JSON.stringify(resp.data.newOrder));
+      // show Swal then redirect
+      await Swal.fire({
+        icon: 'success',
+        title: 'Order placed successfully!',
+        text: 'Redirecting to tracking page...',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      navigate(`/track/${resp.data.newOrder._id}`);
 
-  } catch (error) {
-    toast.error("Payment Failed");
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      console.error('COD order error', error.response || error);
+      toast.error(
+        error.response?.data?.message ||
+        JSON.stringify(error.response?.data) ||
+        "Failed to place order"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    if (formData.paymentMethod === 'cod') {
+      handleCod(e);
+    } else {
+      handleRazorpay(e);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -520,24 +608,24 @@ const CheckoutView = () => {
                   <div className="row g-3 mb-4">
                     <div className="col-md-6">
                       <div 
-                        className={`payment-method ${formData.paymentMethod === 'credit' ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'credit' }))}
+                        className={`payment-method ${formData.paymentMethod === 'razorpay' ? 'selected' : ''}`}
+                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'razorpay' }))}
                       >
                         <div className="form-check">
                           <input
                             type="radio"
                             className="form-check-input"
                             name="paymentMethod"
-                            value="credit"
-                            checked={formData.paymentMethod === 'credit'}
+                            value="razorpay"
+                            checked={formData.paymentMethod === 'razorpay'}
                             onChange={handleInputChange}
                             required
                           />
                           <label className="form-check-label">
-                            Credit Card
+                            Razorpay
                             <img
                               src="../../images/payment/cards.webp"
-                              alt="Credit Cards"
+                              alt="Razorpay"
                               className="ms-2"
                               height={24}
                             />
@@ -547,95 +635,30 @@ const CheckoutView = () => {
                     </div>
                     <div className="col-md-6">
                       <div 
-                        className={`payment-method ${formData.paymentMethod === 'paypal' ? 'selected' : ''}`}
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'paypal' }))}
+                        className={`payment-method ${formData.paymentMethod === 'cod' ? 'selected' : ''}`}
+                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'cod' }))}
                       >
                         <div className="form-check">
                           <input
                             type="radio"
                             className="form-check-input"
                             name="paymentMethod"
-                            value="paypal"
-                            checked={formData.paymentMethod === 'paypal'}
+                            value="cod"
+                            checked={formData.paymentMethod === 'cod'}
                             onChange={handleInputChange}
                             required
                           />
                           <label className="form-check-label">
-                            PayPal
-                            <img
-                              src="../../images/payment/paypal_64.webp"
-                              alt="PayPal"
-                              className="ms-2"
-                              height={24}
-                            />
+                            Cash on Delivery
+                            <i className="bi bi-cash-stack ms-2"></i>
                           </label>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {formData.paymentMethod === 'credit' && (
-                    <div className="row g-3">
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="cardName"
-                          value={formData.cardName}
-                          onChange={handleInputChange}
-                          placeholder="Name on Card"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="cardNumber"
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          placeholder="Card Number"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="expirationMonth"
-                          value={formData.expirationMonth}
-                          onChange={handleInputChange}
-                          placeholder="MM"
-                          maxLength="2"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="expirationYear"
-                          value={formData.expirationYear}
-                          onChange={handleInputChange}
-                          placeholder="YYYY"
-                          maxLength="4"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="cvv"
-                          value={formData.cvv}
-                          onChange={handleInputChange}
-                          placeholder="CVV"
-                          maxLength="4"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
+                  {/* no extra fields for razorpay at this step */}
+
                 </div>
               </div>
             </div>
@@ -698,6 +721,17 @@ const CheckoutView = () => {
                     </div>
                   </div>
                 </div>
+                {formData.paymentMethod === 'cod' && (
+                  <div className="card mb-4 alert alert-info">
+                    <strong>Review address:</strong>
+                    <p className="mb-1">{formData.shippingName}</p>
+                    <p className="mb-1">{formData.shippingAddress1}{formData.shippingAddress2 && ", " + formData.shippingAddress2}</p>
+                    <p className="mb-1">{formData.shippingState}, {formData.shippingCountry}, {formData.shippingZip}</p>
+                    <p className="mb-0">{formData.mobile}</p>
+                    <small className="text-muted">We will deliver to this address and you will be charged on delivery.</small>
+                  </div>
+                )}
+
                 <div className="card-footer">
                   <button 
                     type="submit"
@@ -711,7 +745,7 @@ const CheckoutView = () => {
                       </>
                     ) : (
                       <>
-                        Pay ${(totalPrice - discount).toFixed(2)}
+                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay $${(totalPrice - discount).toFixed(2)}`}
                       </>
                     )}
                   </button>

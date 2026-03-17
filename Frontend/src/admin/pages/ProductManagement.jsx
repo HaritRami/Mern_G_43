@@ -11,6 +11,9 @@ import { BsPencilSquare, BsTrash, BsEye, BsDownload, BsUpload, BsImages } from '
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import Cookies from "js-cookie";
+// Ensure cookies (accessToken/userId) are sent with requests
+axios.defaults.withCredentials = true;
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -57,44 +60,64 @@ const ProductManagement = () => {
   const SUBCATEGORY_API_URL = "http://localhost:5000/api/sub-category";
 
   // Fetch products
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(API_URL, {
-        params: {
-          search: searchTerm,
-          sortField,
-          sortOrder: sortDirection,
-          page: currentPage,
-          limit: itemsPerPage
-        }
-      });
+const fetchProducts = async () => {
+  setLoading(true);
+  try {
+    const userId = Cookies.get("userId");
 
-      if (response.data.success) {
-        setProducts(response.data.data);
-        setTotalPages(response.data.pagination.pages);
-        setTotalItems(response.data.pagination.total);
+    const response = await axios.get(API_URL, {
+      params: {
+        search: searchTerm,
+        sortField,
+        sortOrder: sortDirection,
+        page: currentPage,
+        limit: itemsPerPage
       }
-    } catch (error) {
-      toast.error("Error fetching products!");
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
+    if (response.data.success) {
+      // ✅ Filter products by userId
+      const filteredProducts = response.data.data.filter(
+        (item) => item.userId === userId
+      );
+
+      setProducts(filteredProducts);
+      setTotalPages(response.data.pagination.pages); // keep pagination if needed
+      setTotalItems(filteredProducts.length); // update count based on filtered data
+    }
+  } catch (error) {
+    toast.error("Error fetching products!");
+  } finally {
+    setLoading(false);
+  }
+};
   // Fetch categories and subcategories
   const fetchCategories = async () => {
-    try {
-      const [categoriesRes, subCategoriesRes] = await Promise.all([
-        axios.get(CATEGORY_API_URL),
-        axios.get(SUBCATEGORY_API_URL)
-      ]);
-      setCategories(categoriesRes.data.data);
-      setSubCategories(subCategoriesRes.data.data);
-    } catch (error) {
-      toast.error("Error fetching categories!");
-    }
-  };
+  try {
+    const userId = Cookies.get("userId");
+
+    const [categoriesRes, subCategoriesRes] = await Promise.all([
+      axios.get(CATEGORY_API_URL),
+      axios.get(SUBCATEGORY_API_URL)
+    ]);
+
+    // ✅ Filter categories
+    const filteredCategories = categoriesRes.data.data.filter(
+      (item) => item.userId === userId
+    );
+
+    // ✅ Filter subcategories
+    const filteredSubCategories = subCategoriesRes.data.data.filter(
+      (item) => item.userId === userId
+    );
+
+    setCategories(filteredCategories);
+    setSubCategories(filteredSubCategories);
+
+  } catch (error) {
+    toast.error("Error fetching categories!");
+  }
+};
 
   useEffect(() => {
     fetchProducts();
@@ -114,7 +137,7 @@ const ProductManagement = () => {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedImages(files);
-    
+
     // Create preview URLs
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(previews);
@@ -142,18 +165,18 @@ const ProductManagement = () => {
         await axios.put(
           `${API_URL}/${selectedProduct._id}`,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' }}
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         toast.success("Product updated successfully!");
       } else {
         await axios.post(
           API_URL,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' }}
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         toast.success("Product created successfully!");
       }
-      
+
       setShowModal(false);
       fetchProducts();
     } catch (error) {
@@ -391,8 +414,8 @@ const ProductManagement = () => {
                     <Button variant="success" onClick={() => setShowScanner(true)}>
                       Scan Code
                     </Button>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       onClick={handleExport}
                       title="Export to Excel"
                     >
@@ -406,17 +429,17 @@ const ProductManagement = () => {
                         accept=".xlsx,.xls"
                         style={{ display: 'none' }}
                       />
-                      <Button 
-                        variant="info" 
+                      <Button
+                        variant="info"
                         onClick={() => fileInputRef.current.click()}
                         disabled={importing}
                         title="Import from Excel"
                       >
-                        <BsUpload className="me-1" /> 
+                        <BsUpload className="me-1" />
                         {importing ? 'Importing...' : 'Import'}
                       </Button>
-                      <Button 
-                        variant="outline-secondary" 
+                      <Button
+                        variant="outline-secondary"
                         onClick={downloadTemplate}
                         title="Download Template"
                       >
@@ -430,8 +453,8 @@ const ProductManagement = () => {
                 {showScanner && (
                   <div className="mb-3">
                     <div id="reader" className="mb-3"></div>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       onClick={() => {
                         setShowScanner(false);
                         if (scanner) {
@@ -495,15 +518,15 @@ const ProductManagement = () => {
                           <td>${product.price}</td>
                           <td>{product.stock}</td>
                           <td style={{ cursor: 'pointer' }} onClick={() => handleBarcodeClick(product.barcodeId)}>
-                            <Barcode 
-                              value={product.barcodeId} 
+                            <Barcode
+                              value={product.barcodeId}
                               width={1}
                               height={30}
                               fontSize={12}
                             />
                           </td>
                           <td style={{ cursor: 'pointer' }} onClick={() => handleQRClick(product.barcodeId)}>
-                            <QRCode 
+                            <QRCode
                               value={product.barcodeId}
                               size={50}
                               level="H"
@@ -511,20 +534,20 @@ const ProductManagement = () => {
                           </td>
                           <td>
                             <div className="d-flex gap-2 align-items-center">
-                              <BsPencilSquare 
-                                className="text-primary" 
+                              <BsPencilSquare
+                                className="text-primary"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleModalOpen(product)}
                                 title="Edit"
                               />
-                              <BsTrash 
-                                className="text-danger" 
+                              <BsTrash
+                                className="text-danger"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleDelete(product._id)}
                                 title="Delete"
                               />
-                              <BsEye 
-                                className="text-success" 
+                              <BsEye
+                                className="text-success"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleViewDetails(product)}
                                 title="View Details"
@@ -710,9 +733,9 @@ const ProductManagement = () => {
                       key={index}
                       src={image}
                       alt={`Product ${index + 1}`}
-                      style={{ 
-                        width: '100px', 
-                        height: '100px', 
+                      style={{
+                        width: '100px',
+                        height: '100px',
                         objectFit: 'cover',
                         borderRadius: '5px',
                         cursor: 'pointer'
@@ -740,8 +763,8 @@ const ProductManagement = () => {
       </Modal>
 
       {/* Image Preview Modal */}
-      <Modal 
-        show={showImageModal} 
+      <Modal
+        show={showImageModal}
         onHide={() => setShowImageModal(false)}
         size="lg"
         centered

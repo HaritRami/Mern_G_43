@@ -28,6 +28,8 @@ const ProductDetailView = lazy(() => import("./views/product/Detail"));
 const StarZoneView = lazy(() => import("./views/product/StarZone"));
 const CartView = lazy(() => import("./views/cart/Cart"));
 const CheckoutView = lazy(() => import("./views/cart/Checkout"));
+const OrderConfirmation = lazy(() => import("./views/cart/OrderConfirmation"));
+const Tracking = lazy(() => import("./views/cart/Tracking"));
 const InvoiceView = lazy(() => import("./views/cart/Invoice"));
 const DocumentationView = lazy(() => import("./views/Documentation"));
 const NotFoundView = lazy(() => import("./views/pages/404"));
@@ -85,6 +87,8 @@ function App() {
               <Route path="/star/zone" element={<Layout><StarZoneView /></Layout>} />
               <Route path="/cart" element={<Layout><CartView /></Layout>} />
               <Route path="/checkout" element={<Layout><CheckoutView /></Layout>} />
+              <Route path="/order-confirmation" element={<Layout><OrderConfirmation /></Layout>} />
+              <Route path="/track/:id" element={<Layout><Tracking /></Layout>} />
               <Route path="/create-or-edit-product" element={<Layout><CreateOrEditProduct /></Layout>} />
               <Route path="/invoice" element={<Layout><InvoiceView /></Layout>} />
               <Route path="/documentation" element={<Layout><DocumentationView /></Layout>} />
@@ -95,8 +99,8 @@ function App() {
               <Route path="/500" element={<Layout><InternalServerErrorView /></Layout>} />
 
               {/* Admin Routes */}
-              <Route path="/admins" element={<AdminLayout><Dashboard /></AdminLayout>} />
-              <Route path="/admins/product-list" element={<AdminLayout><ProductList /></AdminLayout>} />
+              <Route path="/seller" element={<AdminLayout><Dashboard /></AdminLayout>} />
+              <Route path="/seller/product-list" element={<AdminLayout><ProductList /></AdminLayout>} />
               <Route path="/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
               <Route path="/sub-categories" element={<AdminLayout><SubCategoryManagement /></AdminLayout>} />
               <Route path="/products" element={<AdminLayout><ProductManagement /></AdminLayout>} />

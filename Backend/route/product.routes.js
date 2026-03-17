@@ -1,5 +1,6 @@
 import express from "express";
 import { upload } from "../middleware/uploadMiddleware.js";
+import { authenticateToken } from "../middleware/auth.middleware.js";
 import {
   createProduct,
   getAllProducts,
@@ -29,12 +30,12 @@ const excelUpload = multer({
   }
 });
 
-productRouter.post("/", upload.array('images', 5), createProduct);
+productRouter.post("/", authenticateToken, upload.array('images', 5), createProduct);
 productRouter.get("/", getAllProducts);
 productRouter.get("/:productId", getProductById);
-productRouter.put("/:productId", upload.array('images', 5), updateProduct);
-productRouter.delete("/:productId", deleteProduct);
-productRouter.post("/import", excelUpload.single('file'), importProducts);
+productRouter.put("/:productId", authenticateToken, upload.array('images', 5), updateProduct);
+productRouter.delete("/:productId", authenticateToken, deleteProduct);
+productRouter.post("/import", authenticateToken, excelUpload.single('file'), importProducts);
 productRouter.get("/barcode/:barcodeId", getProductByBarcodeController);
 productRouter.get("/category/:categoryName", getProductsByCategory);
 

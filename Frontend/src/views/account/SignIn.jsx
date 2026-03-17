@@ -31,8 +31,8 @@ const SignInView = () => {
         login(data.data.user); // Update context with user data
         
         // Check if user is admin and redirect accordingly
-        if (data.data.user.role === 'Admin') {
-          navigate('/admins');
+        if (data.data.user.role === 'Seller') {
+          navigate('/seller');
         } else {
           navigate('/home'); // Redirect regular users to home page
         }

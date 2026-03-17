@@ -3,10 +3,10 @@ import User from '../models/user.model.js';
 
 export const authenticateToken = async (req, res, next) => {
     try {
-        const authHeader = req.headers['authorization'];
+        // Prefer the access token from cookie, fall back to Authorization header
+        const token = req.cookies?.accessToken || req.headers['authorization']?.split(' ')[1];
 
-        // Check if Authorization header is missing or doesn't start with 'Bearer'
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        if (!token) {
             return res.status(401).json({
                 message: "Authentication required",
                 error: true,
@@ -14,16 +14,12 @@ export const authenticateToken = async (req, res, next) => {
             });
         }
 
-        // Extract token
-        const token = authHeader.split(" ")[1];
-        console.log({token})
-
         try {
             // Verify the token
-            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-            
+            const decoded = jwt.verify(token, process.env.SECRET_KEY_ACCESS_TOKEN || process.env.ACCESS_TOKEN_SECRET);
+
             // Ensure correct payload property (`id` or `userId`)
-            const userId = decoded.id || decoded.userId; 
+            const userId = decoded.id || decoded.userId;
             if (!userId) {
                 return res.status(401).json({
                     message: "Invalid token payload",

@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 import { nanoid } from 'nanoid';
 
 const categorySchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        required: true
+    },
     name: {
         type: String,
         required: true

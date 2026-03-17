@@ -13,6 +13,8 @@ import { BsPencilSquare, BsTrash, BsEye, BsDownload, BsUpload } from 'react-icon
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useUser } from "../../context/UserContext";
+import Cookies from "js-cookie";
+
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -45,32 +47,41 @@ const CategoryManagement = () => {
 
   // Fetch categories
   const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}`, {
-        params: {
-          search: searchTerm,
-          sortField,
-          sortOrder: sortDirection,
-          page: currentPage,
-          limit: itemsPerPage
-        }
-      });
+  setLoading(true);
+  try {
+    const userId = Cookies.get("userId");
 
-      if (response.data && response.data.success) {
-        setCategories(response.data.data);
-        setTotalPages(response.data.pagination.pages);
-        setTotalItems(response.data.pagination.total);
-      } else {
-        toast.error("Invalid data format received!");
+    const response = await axios.get(`${API_URL}`, {
+      params: {
+        search: searchTerm,
+        sortField,
+        sortOrder: sortDirection,
+        page: currentPage,
+        limit: itemsPerPage
       }
-    } catch (error) {
-      toast.error("Error fetching categories!");
-      console.error("Error fetching categories:", error);
-    } finally {
-      setLoading(false);
+    });
+
+    if (response.data && response.data.success) {
+      
+      // 👇 FILTER HERE
+      const filteredData = response.data.data.filter(
+        (item) => item.userId === userId
+      );
+
+      setCategories(filteredData);
+      setTotalPages(response.data.pagination.pages);
+      setTotalItems(filteredData.length);
+
+    } else {
+      toast.error("Invalid data format received!");
     }
-  };
+  } catch (error) {
+    toast.error("Error fetching categories!");
+    console.error("Error fetching categories:", error);
+  } finally {
+    setLoading(false);
+  }
+};
   
 
   useEffect(() => {

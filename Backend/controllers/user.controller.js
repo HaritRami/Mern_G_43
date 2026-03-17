@@ -172,14 +172,17 @@ export async function registerUserController(request, response) {
     const refreshToken = await genrateRefreshToken(save._id);
 
     // Set cookies with the same options as login
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "None"
+      secure: isProduction, // Only require HTTPS in production
+      sameSite: isProduction ? "None" : "Lax"
     };
 
     response.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15 minutes
     response.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
+    // userId needs to be readable by frontend JS for filtering
+    response.cookie('userId', save._id.toString(), { ...cookieOptions, httpOnly: false, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
 
     // Send verification email
     const verificationURL = `${process.env.FRONTEND_URL}/api/mailVerification?code=${save?._id}`;
@@ -331,15 +334,18 @@ export async function loginController(request, response) {
     const refreshToken = await genrateRefreshToken(user._id);
 
     // Set cookies
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "None",
+      secure: isProduction, // Only require HTTPS in production
+      sameSite: isProduction ? "None" : "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days for refresh token
     };
 
     response.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15 minutes
     response.cookie('refreshToken', refreshToken, cookieOptions);
+    // userId needs to be readable by frontend JS for filtering
+    response.cookie('userId', user._id.toString(), { ...cookieOptions, httpOnly: false });
 
     console.log('Login successful for user:', user._id);
     return response.json({
@@ -387,22 +393,25 @@ export async function refreshTokenController(request, response) {
     }
 
     // Verify refresh token and get user ID
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const userId = decoded.userId;
+    const decoded = jwt.verify(refreshToken, process.env.SECRET_KEY_REFRESH_TOKEN || process.env.REFRESH_TOKEN_SECRET);
+    const userId = decoded.id || decoded.userId;
 
     // Generate new tokens
     const newAccessToken = await genrateAccessTokan(userId);
     const newRefreshToken = await genrateRefreshToken(userId);
 
     // Set new cookies
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "None"
+      secure: isProduction, // Only require HTTPS in production
+      sameSite: isProduction ? "None" : "Lax"
     };
 
     response.cookie('accessToken', newAccessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
     response.cookie('refreshToken', newRefreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    // userId needs to be readable by frontend JS for filtering
+    response.cookie('userId', userId.toString(), { ...cookieOptions, httpOnly: false, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     return response.json({
       message: "Tokens refreshed successfully",
@@ -429,6 +438,7 @@ export async function logoutController(request, response) {
     console.log('Clearing cookies');
     response.clearCookie('accessToken');
     response.clearCookie('refreshToken');
+    response.clearCookie('userId');
 
     console.log('Logout successful');
     return response.json({
@@ -679,51 +689,51 @@ export async function getAllUsersController(request, response) {
 }
 
 export const changePasswordController = async (req, res) => {
-    try {
-        const { currentPassword, newPassword } = req.body;
-        const userId = req.params.userId;
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.params.userId;
 
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Current password and new password are required"
-            });
-        }
-
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        // Verify current password
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({
-                success: false,
-                message: "Current password is incorrect"
-            });
-        }
-
-        // Hash new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-        // Update password
-        user.password = hashedPassword;
-        await user.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Password updated successfully"
-        });
-    } catch (error) {
-        console.error("Error in changePasswordController:", error);
-        return res.status(500).json({
-            success: false,
-            message: error.message || "Error updating password"
-        });
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required"
+      });
     }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect"
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully"
+    });
+  } catch (error) {
+    console.error("Error in changePasswordController:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Error updating password"
+    });
+  }
 };

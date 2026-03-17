@@ -11,6 +11,13 @@ const __dirname = dirname(__filename);
 // CREATE a new product
 export const createProduct = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
     const {
       name, category, subCategory, unit, stock,
       price, discount, description, moreDetail, Public
@@ -20,6 +27,7 @@ export const createProduct = async (req, res) => {
     const images = req.files ? req.files.map(file => `/uploads/product_image/${file.filename}`) : [];
 
     const newProduct = new ProductModel({
+      userId: req.user._id,
       name,
       images,
       category,
@@ -148,6 +156,11 @@ export const updateProduct = async (req, res) => {
     const { productId } = req.params;
     const updateData = { ...req.body };
 
+    // Ensure userId cannot be changed via request body
+    if (updateData.userId) {
+      delete updateData.userId;
+    }
+
     // Handle new images if they are uploaded
     if (req.files && req.files.length > 0) {
       // Get the old product to delete its images
@@ -251,9 +264,17 @@ export const importProducts = async (req, res) => {
       errors: []
     };
 
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
     for (let row of data) {
       try {
         const product = new ProductModel({
+          userId: req.user._id,
           name: row.Name,
           category: row.CategoryId,
           subCategory: row.SubCategoryId,
@@ -321,7 +342,7 @@ export const getProductByBarcodeController = async (req, res) => {
 export const getProductsByCategory = async (req, res) => {
   try {
     const { categoryName } = req.params;
-    
+
     // Find products where category name matches
     const products = await ProductModel.find()
       .populate({

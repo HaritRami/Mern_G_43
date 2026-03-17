@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema(
     productDetail: {
       name: {
         type: String,
-        required: true, // Optional: Add validation based on your use case
+        default: '' // optional name field
       },
       images: {
         type: [String],
@@ -50,6 +50,10 @@ const orderSchema = new mongoose.Schema(
     invoiceReceipt: {
       type: Number,
       default: 0,
+    },
+    trackingDate: {
+      type: Date,
+      default: () => new Date(Date.now() + 3*24*60*60*1000) // default 3 days from creation
     },
   },
   { timestamps: true } // Correct placement of timestamps

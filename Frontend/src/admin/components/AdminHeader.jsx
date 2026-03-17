@@ -112,7 +112,7 @@ const AdminDashboard = ({ children }) => {
       <aside id="sidebar" className="sidebar">
         <ul className="sidebar-nav" id="sidebar-nav">
           <li className="nav-item">
-            <Link className={`nav-link ${location.pathname !== "/admins" ? "collapsed" : ""}`} to="/admins">
+            <Link className={`nav-link ${location.pathname !== "/seller" ? "collapsed" : ""}`} to="/seller">
               <i className="bi bi-grid"></i>
               <span>Dashboard</span>
             </Link>

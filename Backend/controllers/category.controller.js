@@ -8,10 +8,18 @@ import { nanoid } from 'nanoid';
 // Create category with image
 export const createCategoryController = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
     const { name, description } = req.body;
     const image = req.file ? `/uploads/category_image/${req.file.filename}` : ""
 
     const category = new CategoryModel({
+      userId: req.user._id,
       name,
       description,
       image
@@ -56,6 +64,11 @@ export const updateCategoryController = async (req, res) => {
   try {
     const { name, description } = req.body;
     const categoryId = req.params.categoryId;
+
+    // Prevent userId from being overwritten via request body
+    if (req.body.userId) {
+      delete req.body.userId;
+    }
 
     const category = await CategoryModel.findById(categoryId);
     if (!category) {
@@ -164,7 +177,7 @@ export const getAllCategoriesController = async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit))
-      .select('name description image barcodeId createdAt updatedAt'); // Optimize by selecting only needed fields
+      .select('userId name description image barcodeId createdAt updatedAt'); // Optimize by selecting only needed fields
 
     // Send response with metadata
     res.json({
@@ -255,22 +268,22 @@ export const importCategoriesController = async (req, res) => {
     for (let row of data) {
       try {
         let imagePath = "";
-        
+
         // If image URL is provided in Excel
         if (row.ImageURL) {
           try {
             // Download image
             const imageResponse = await axios.get(row.ImageURL, { responseType: 'arraybuffer' });
-            
+
             // Generate unique filename
             const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
             const uploadPath = path.join('uploads', 'category_image', fileName);
-            
+
             // Ensure directory exists
             if (!fs.existsSync(path.join('uploads', 'category_image'))) {
               fs.mkdirSync(path.join('uploads', 'category_image'), { recursive: true });
             }
-            
+
             // Save image
             fs.writeFileSync(uploadPath, Buffer.from(imageResponse.data));
             imagePath = `/uploads/category_image/${fileName}`;
@@ -281,6 +294,7 @@ export const importCategoriesController = async (req, res) => {
         }
 
         const category = new CategoryModel({
+          userId: req.user._id,
           name: row.Name,
           description: row.Description || "",
           image: imagePath,

@@ -108,7 +108,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRouter);
 app.use('/api/address', addressRouter);
 
-// Admin-only routes
+// seller-only routes
 app.use('/api/admin/users', UserRoute);
 app.use('/api/image-upload', imageUplodeRouter);
 app.use("/api/payment", routes);

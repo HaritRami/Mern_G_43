@@ -59,7 +59,7 @@ import {
     importCategoriesController
 } from "../controllers/category.controller.js";
 import multer from 'multer';
-import {authenticateToken} from "../middleware/auth.middleware.js"
+import { authenticateToken } from "../middleware/auth.middleware.js"
 const categoryRouter = express.Router();
 
 // Add this multer configuration for Excel files
@@ -77,12 +77,12 @@ const excelUpload = multer({
     }
 });
 
-categoryRouter.post("/", upload.single('image'), createCategoryController);
+categoryRouter.post("/", authenticateToken, upload.single('image'), createCategoryController);
 categoryRouter.get("/", getAllCategoriesController);
 categoryRouter.get("/:categoryId", getCategoryByIdController);
-categoryRouter.put("/:categoryId", upload.single('image'), updateCategoryController);
-categoryRouter.delete("/:categoryId", authenticateToken,deleteCategoryController);
-categoryRouter.post("/import", excelUpload.single('file'), importCategoriesController);
+categoryRouter.put("/:categoryId", authenticateToken, upload.single('image'), updateCategoryController);
+categoryRouter.delete("/:categoryId", authenticateToken, deleteCategoryController);
+categoryRouter.post("/import", authenticateToken, excelUpload.single('file'), importCategoriesController);
 categoryRouter.get("/barcode/:barcodeId", getCategoryByBarcodeController);
 
 export default categoryRouter;
