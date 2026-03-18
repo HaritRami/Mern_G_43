@@ -4,7 +4,9 @@ import User from '../models/user.model.js';
 export const authenticateToken = async (req, res, next) => {
     try {
         // Prefer the access token from cookie, fall back to Authorization header
-        const token = req.cookies?.accessToken || req.headers['authorization']?.split(' ')[1];
+        const authHeader = req.headers['authorization'];
+        const tokenFromHeader = authHeader && authHeader.split(' ')[1] ? authHeader.split(' ')[1] : authHeader;
+        const token = req.cookies?.accessToken || tokenFromHeader;
 
         if (!token) {
             return res.status(401).json({
@@ -15,8 +17,17 @@ export const authenticateToken = async (req, res, next) => {
         }
 
         try {
-            // Verify the token
-            const decoded = jwt.verify(token, process.env.SECRET_KEY_ACCESS_TOKEN || process.env.ACCESS_TOKEN_SECRET);
+            // Verify the token with the same secret that was used to sign it
+            const secret = process.env.SECRET_KEY_ACCESS_TOKEN || process.env.ACCESS_TOKEN_SECRET;
+            if (!secret) {
+                return res.status(500).json({
+                    message: "Server misconfiguration: access token secret is missing.",
+                    error: true,
+                    success: false
+                });
+            }
+
+            const decoded = jwt.verify(token, secret);
 
             // Ensure correct payload property (`id` or `userId`)
             const userId = decoded.id || decoded.userId;

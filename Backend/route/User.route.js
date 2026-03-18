@@ -18,7 +18,7 @@ import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
 const UserRoute = Router();
 
 // Public routes
-UserRoute.post('/register', registerUserController);
+UserRoute.post('/register', uploadMiddleware.avatar, registerUserController);
 UserRoute.post('/login', loginController);
 UserRoute.post('/verify-email', verifyEmailController);
 UserRoute.post('/refresh-token', refreshTokenController);

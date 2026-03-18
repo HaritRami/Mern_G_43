@@ -7,12 +7,12 @@ import "react-toastify/dist/ReactToastify.css";
 import Swal from 'sweetalert2';
 import Barcode from 'react-barcode';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { 
-  BsPencilSquare, 
-  BsTrash, 
-  BsEye, 
-  BsQrCode, 
-  BsUpcScan 
+import {
+  BsPencilSquare,
+  BsTrash,
+  BsEye,
+  BsQrCode,
+  BsUpcScan
 } from 'react-icons/bs';
 
 import * as XLSX from 'xlsx';
@@ -24,10 +24,10 @@ const SubCategoryManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedSubCategory, setSelectedSubCategory] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ 
-    name: "", 
+  const [formData, setFormData] = useState({
+    name: "",
     image: "",
-    category: "" 
+    category: ""
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -124,17 +124,17 @@ const SubCategoryManagement = () => {
       if (selectedSubCategory) {
         // Update subcategory
         response = await axios.put(
-          `${API_URL}/${selectedSubCategory._id}`, 
+          `${API_URL}/${selectedSubCategory._id}`,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' }}
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         toast.success("SubCategory updated successfully!");
       } else {
         // Create subcategory
         response = await axios.post(
-          API_URL, 
+          API_URL,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' }}
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         toast.success("SubCategory created successfully!");
       }
@@ -318,7 +318,7 @@ const SubCategoryManagement = () => {
 
   // Render table with all functionalities
   const renderTable = () => (
-    <table className="table">
+    <table className="table w-100">
       <thead>
         <tr>
           <th onClick={() => handleSort('name')}>
@@ -402,7 +402,7 @@ const SubCategoryManagement = () => {
       <section className="section dashboard">
         <PageTitle title="SubCategory Management" />
         <ToastContainer />
-        
+
         <div className="row">
           <div className="col-lg-12">
             <div className="card">
@@ -554,8 +554,8 @@ const SubCategoryManagement = () => {
       </Modal>
 
       {/* Image Preview Modal */}
-      <Modal 
-        show={showImageModal} 
+      <Modal
+        show={showImageModal}
         onHide={() => setShowImageModal(false)}
         size="lg"
         centered
@@ -579,8 +579,8 @@ const SubCategoryManagement = () => {
       </Modal>
 
       {/* Add Barcode Modal */}
-      <Modal 
-        show={showBarcodeModal} 
+      <Modal
+        show={showBarcodeModal}
         onHide={() => setShowBarcodeModal(false)}
         size="lg"
         centered
@@ -592,7 +592,7 @@ const SubCategoryManagement = () => {
           <div className="barcode-modal">
             {selectedBarcodeValue && (
               <>
-                <Barcode 
+                <Barcode
                   value={selectedBarcodeValue}
                   width={2}
                   height={100}
@@ -600,8 +600,8 @@ const SubCategoryManagement = () => {
                   displayValue={true}
                 />
                 <p className="mt-3">Barcode ID: {selectedBarcodeValue}</p>
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   className="mt-2"
                   onClick={downloadBarcode}
                 >
@@ -614,8 +614,8 @@ const SubCategoryManagement = () => {
       </Modal>
 
       {/* Add QR Code Modal */}
-      <Modal 
-        show={showQRModal} 
+      <Modal
+        show={showQRModal}
         onHide={() => setShowQRModal(false)}
         size="lg"
         centered
@@ -627,15 +627,15 @@ const SubCategoryManagement = () => {
           <div className="qr-modal">
             {selectedBarcodeValue && (
               <>
-                <QRCode 
+                <QRCode
                   value={selectedBarcodeValue}
                   size={256}
                   level="H"
                   includeMargin={true}
                 />
                 <p className="mt-3">QR Code ID: {selectedBarcodeValue}</p>
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   className="mt-2"
                   onClick={downloadQRCode}
                 >

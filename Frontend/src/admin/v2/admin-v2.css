@@ -1,0 +1,113 @@
+/* Styles specific to the new admin v2 panel */
+
+/* ── Root layout ── */
+.admin-v2-layout {
+    min-height: 100vh;
+    background: #f6f9ff;
+    overflow-x: hidden;
+}
+
+/* ── Content wrapper (main + footer sit here, next to sidebar) ── */
+.admin-v2-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin-left: 300px;
+    padding-top: 60px;
+    width: calc(100% - 300px);
+    transition: margin-left 0.3s ease, width 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* ── Override the GLOBAL #main styles so the wrapper handles positioning ── */
+.admin-v2-layout #main {
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    padding: 24px 24px 16px !important;
+    width: 100% !important;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    transition: none !important;
+}
+
+/* Also kill any nested #main inside the content (old pages wrap in <main id="main">) */
+.admin-v2-layout #main #main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+/* ── Container fluid spans full width ── */
+.admin-v2-layout .container-fluid {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+/* ── Section inside old pages — remove extra margin ── */
+.admin-v2-layout .section {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* ── Cards stretch full width ── */
+.admin-v2-layout .card {
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+/* ── Responsive tables ── */
+.admin-v2-layout .table-responsive {
+    width: 100%;
+}
+
+/* ── Card body spacing ── */
+.admin-v2-layout .card-body {
+    padding: 20px;
+}
+
+/* ── Footer pinned at bottom ── */
+.admin-v2-layout .footer {
+    flex-shrink: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
+/* ── Page title consistency ── */
+.admin-v2-layout .pagetitle {
+    margin-bottom: 16px;
+}
+
+.admin-v2-layout .pagetitle h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #012970;
+    margin-bottom: 4px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1199px) {
+    .admin-v2-content-wrapper {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 60px;
+    }
+
+    .admin-v2-layout #main {
+        padding: 16px !important;
+    }
+}
+
+/* ── Toggle sidebar ── */
+.toggle-sidebar .admin-v2-content-wrapper {
+    margin-left: 0;
+    width: 100%;
+}
+
+@media (max-width: 1199px) {
+    .toggle-sidebar .admin-v2-content-wrapper {
+        margin-left: 0;
+        width: 100%;
+    }
+}

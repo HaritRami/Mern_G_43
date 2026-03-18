@@ -45,6 +45,18 @@ const UserManagement = lazy(() => import("./admin/pages/UserManagement"));
 const SubCategoryManagement = lazy(() => import("./admin/pages/SubCategoryManagement"));
 const ProductManagement = lazy(() => import("./admin/pages/ProductManagement"));
 const AdminProfile = lazy(() => import("./admin/pages/AdminProfile"));
+
+// New admin panel (v2)
+const AdminV2Layout = lazy(() => import("./admin/v2/components/AdminV2Layout"));
+const AdminV2Dashboard = lazy(() => import("./admin/v2/pages/Dashboard"));
+const AdminV2Users = lazy(() => import("./admin/v2/pages/Users"));
+const AdminV2Products = lazy(() => import("./admin/v2/pages/Products"));
+const AdminV2Categories = lazy(() => import("./admin/v2/pages/Categories"));
+const AdminV2SubCategories = lazy(() => import("./admin/v2/pages/SubCategories"));
+const AdminV2Sellers = lazy(() => import("./admin/v2/pages/Sellers"));
+const AdminV2Orders = lazy(() => import("./admin/v2/pages/Orders"));
+const AdminV2Profile = lazy(() => import("./admin/v2/pages/Profile"));
+const AdminV2Settings = lazy(() => import("./admin/v2/pages/Settings"));
 // Layout component that includes Header, TopMenu, and Footer
 const Layout = ({ children }) => (
   <React.Fragment>
@@ -98,7 +110,7 @@ function App() {
               <Route path="/blog/detail" element={<Layout><BlogDetailView /></Layout>} />
               <Route path="/500" element={<Layout><InternalServerErrorView /></Layout>} />
 
-              {/* Admin Routes */}
+              {/* Admin Routes (legacy panel) */}
               <Route path="/seller" element={<AdminLayout><Dashboard /></AdminLayout>} />
               <Route path="/seller/product-list" element={<AdminLayout><ProductList /></AdminLayout>} />
               <Route path="/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
@@ -106,6 +118,17 @@ function App() {
               <Route path="/products" element={<AdminLayout><ProductManagement /></AdminLayout>} />
               <Route path="/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
               <Route path="/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+
+              {/* Admin Routes (new panel) */}
+              <Route path="/admin" element={<AdminV2Layout><AdminV2Dashboard /></AdminV2Layout>} />
+              <Route path="/admin/users" element={<AdminV2Layout><AdminV2Users /></AdminV2Layout>} />
+              <Route path="/admin/products" element={<AdminV2Layout><AdminV2Products /></AdminV2Layout>} />
+              <Route path="/admin/categories" element={<AdminV2Layout><AdminV2Categories /></AdminV2Layout>} />
+              <Route path="/admin/subcategories" element={<AdminV2Layout><AdminV2SubCategories /></AdminV2Layout>} />
+              <Route path="/admin/sellers" element={<AdminV2Layout><AdminV2Sellers /></AdminV2Layout>} />
+              <Route path="/admin/orders" element={<AdminV2Layout><AdminV2Orders /></AdminV2Layout>} />
+              <Route path="/admin/profile" element={<AdminV2Layout><AdminV2Profile /></AdminV2Layout>} />
+              <Route path="/admin/settings" element={<AdminV2Layout><AdminV2Settings /></AdminV2Layout>} />
 
               {/* Add these new routes for category products (use slug param for clean URLs) */}
               <Route

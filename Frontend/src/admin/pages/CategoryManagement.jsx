@@ -47,42 +47,44 @@ const CategoryManagement = () => {
 
   // Fetch categories
   const fetchCategories = async () => {
-  setLoading(true);
-  try {
-    const userId = Cookies.get("userId");
+    setLoading(true);
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      const userRole = savedUser?.role || savedUser?.data?.role || "";
+      const userId = Cookies.get("userId");
 
-    const response = await axios.get(`${API_URL}`, {
-      params: {
-        search: searchTerm,
-        sortField,
-        sortOrder: sortDirection,
-        page: currentPage,
-        limit: itemsPerPage
+      const response = await axios.get(`${API_URL}`, {
+        params: {
+          search: searchTerm,
+          sortField,
+          sortOrder: sortDirection,
+          page: currentPage,
+          limit: itemsPerPage
+        }
+      });
+
+      if (response.data && response.data.success) {
+        let cats = response.data.data;
+
+        // Seller sees only their own categories; Admin sees all
+        if (userRole === "Seller" && userId) {
+          cats = cats.filter((item) => item.userId === userId);
+        }
+
+        setCategories(cats);
+        setTotalPages(response.data.pagination.pages);
+        setTotalItems(cats.length);
+      } else {
+        toast.error("Invalid data format received!");
       }
-    });
-
-    if (response.data && response.data.success) {
-      
-      // 👇 FILTER HERE
-      const filteredData = response.data.data.filter(
-        (item) => item.userId === userId
-      );
-
-      setCategories(filteredData);
-      setTotalPages(response.data.pagination.pages);
-      setTotalItems(filteredData.length);
-
-    } else {
-      toast.error("Invalid data format received!");
+    } catch (error) {
+      toast.error("Error fetching categories!");
+      console.error("Error fetching categories:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    toast.error("Error fetching categories!");
-    console.error("Error fetching categories:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-  
+  };
+
 
   useEffect(() => {
     fetchCategories();
@@ -115,96 +117,96 @@ const CategoryManagement = () => {
     e.preventDefault();
 
     try {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-
-        if (!savedUser || !savedUser.tokens?.accessToken) {
-            toast.error("User is not authenticated. Please log in.");
-            return;
-        }
-
-        const formDataWithImage = new FormData();
-        formDataWithImage.append("name", formData.name);
-        formDataWithImage.append("description", formData.description);
-        if (selectedImage) {
-            formDataWithImage.append("image", selectedImage);
-        }
-
-        const headers = {
-            "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${savedUser.tokens.accessToken}`,
-        };
-
-        if (selectedCategory && selectedCategory._id) {
-            // Update category
-            await axios.put(`${API_URL}/${selectedCategory._id}`, formDataWithImage, { headers });
-            toast.success("Category updated successfully!");
-        } else {
-            // Create category
-            await axios.post(API_URL, formDataWithImage, { headers });
-            toast.success("Category added successfully!");
-        }
-
-        setShowModal(false);
-        fetchCategories();
-    } catch (error) {
-        console.error("Error saving category:", error);
-
-        // Handle expired token
-        if (error.response && error.response.status === 403) {
-            toast.error("Session expired! Please log in again.");
-            localStorage.removeItem("user");
-            window.location.href = "/account/signin"; // Redirect to login
-        } else {
-            toast.error("Error saving category!");
-        }
-    }
-};
-
-  // Modified handleDelete with SweetAlert
-const handleDelete = async (categoryId) => {
-  try {
       const savedUser = JSON.parse(localStorage.getItem("user"));
 
       if (!savedUser || !savedUser.tokens?.accessToken) {
-          Swal.fire("Error!", "User is not authenticated.", "error");
-          return;
+        toast.error("User is not authenticated. Please log in.");
+        return;
+      }
+
+      const formDataWithImage = new FormData();
+      formDataWithImage.append("name", formData.name);
+      formDataWithImage.append("description", formData.description);
+      if (selectedImage) {
+        formDataWithImage.append("image", selectedImage);
+      }
+
+      const headers = {
+        "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${savedUser.tokens.accessToken}`,
+      };
+
+      if (selectedCategory && selectedCategory._id) {
+        // Update category
+        await axios.put(`${API_URL}/${selectedCategory._id}`, formDataWithImage, { headers });
+        toast.success("Category updated successfully!");
+      } else {
+        // Create category
+        await axios.post(API_URL, formDataWithImage, { headers });
+        toast.success("Category added successfully!");
+      }
+
+      setShowModal(false);
+      fetchCategories();
+    } catch (error) {
+      console.error("Error saving category:", error);
+
+      // Handle expired token
+      if (error.response && error.response.status === 403) {
+        toast.error("Session expired! Please log in again.");
+        localStorage.removeItem("user");
+        window.location.href = "/account/signin"; // Redirect to login
+      } else {
+        toast.error("Error saving category!");
+      }
+    }
+  };
+
+  // Modified handleDelete with SweetAlert
+  const handleDelete = async (categoryId) => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (!savedUser || !savedUser.tokens?.accessToken) {
+        Swal.fire("Error!", "User is not authenticated.", "error");
+        return;
       }
 
       const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to revert this!",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, delete it!",
-          cancelButtonText: "Cancel"
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel"
       });
       if (result.isConfirmed) {
-          await axios.delete(`${API_URL}/${categoryId}`, {
-              headers: {
-                  "Authorization": `Bearer ${savedUser.tokens.accessToken}`,
-              }
-          });
+        await axios.delete(`${API_URL}/${categoryId}`, {
+          headers: {
+            "Authorization": `Bearer ${savedUser.tokens.accessToken}`,
+          }
+        });
 
-          // Remove the deleted category from state
-          setCategories(prevCategories => prevCategories.filter(cat => cat._id !== categoryId));
+        // Remove the deleted category from state
+        setCategories(prevCategories => prevCategories.filter(cat => cat._id !== categoryId));
 
-          Swal.fire("Deleted!", "Category has been deleted.", "success");
+        Swal.fire("Deleted!", "Category has been deleted.", "success");
       }
-  } catch (error) {
+    } catch (error) {
       console.error("Error deleting category:", error);
 
       // Handle expired token
       if (error.response && error.response.status === 403) {
-          Swal.fire("Session Expired!", "Please log in again.", "warning");
-          localStorage.removeItem("user");
-          window.location.href = "/account/signin"; // Redirect to login page
+        Swal.fire("Session Expired!", "Please log in again.", "warning");
+        localStorage.removeItem("user");
+        window.location.href = "/account/signin"; // Redirect to login page
       } else {
-          Swal.fire("Error!", "Failed to delete category.", "error");
+        Swal.fire("Error!", "Failed to delete category.", "error");
       }
-  }
-};
+    }
+  };
 
   // Initialize QR Scanner
   useEffect(() => {
@@ -217,7 +219,7 @@ const handleDelete = async (categoryId) => {
         },
         fps: 5,
       });
-      
+
       scanner.render(success, error);
 
       function success(result) {
@@ -312,10 +314,10 @@ const handleDelete = async (categoryId) => {
     // Generate Excel file
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
+
     // Get current date for filename
     const date = new Date().toISOString().split('T')[0];
-    
+
     // Save file
     saveAs(data, `categories_${date}.xlsx`);
   };
@@ -324,29 +326,29 @@ const handleDelete = async (categoryId) => {
   const downloadTemplate = () => {
     const template = XLSX.utils.book_new();
     const templateData = [
-      { 
-        Name: 'Example Category 1', 
+      {
+        Name: 'Example Category 1',
         Description: 'Description 1',
         ImageURL: 'https://example.com/image1.jpg'
       },
-      { 
-        Name: 'Example Category 2', 
+      {
+        Name: 'Example Category 2',
         Description: 'Description 2',
         ImageURL: 'https://example.com/image2.jpg'
       }
     ];
-    
+
     const ws = XLSX.utils.json_to_sheet(templateData);
-    
+
     // Add column widths
     ws['!cols'] = [
       { wch: 20 }, // Name
       { wch: 30 }, // Description
       { wch: 50 }  // ImageURL
     ];
-    
+
     XLSX.utils.book_append_sheet(template, ws, "Template");
-    
+
     const excelBuffer = XLSX.write(template, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(data, 'category_import_template.xlsx');
@@ -428,7 +430,7 @@ const handleDelete = async (categoryId) => {
                         onChange={handleSearch}
                       />
                       {searchTerm && (
-                        <Button 
+                        <Button
                           variant="outline-secondary"
                           onClick={() => setSearchTerm('')}
                         >
@@ -444,8 +446,8 @@ const handleDelete = async (categoryId) => {
                     <Button variant="success" onClick={() => setShowScanner(true)}>
                       Scan Code
                     </Button>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       onClick={exportToExcel}
                       title="Export to Excel"
                     >
@@ -459,17 +461,17 @@ const handleDelete = async (categoryId) => {
                         accept=".xlsx,.xls"
                         style={{ display: 'none' }}
                       />
-                      <Button 
-                        variant="info" 
+                      <Button
+                        variant="info"
                         onClick={() => fileInputRef.current.click()}
                         disabled={importing}
                         title="Import from Excel"
                       >
-                        <BsUpload className="me-1" /> 
+                        <BsUpload className="me-1" />
                         {importing ? 'Importing...' : 'Import'}
                       </Button>
-                      <Button 
-                        variant="outline-secondary" 
+                      <Button
+                        variant="outline-secondary"
                         onClick={downloadTemplate}
                         title="Download Template"
                       >
@@ -490,7 +492,7 @@ const handleDelete = async (categoryId) => {
                     <Spinner animation="border" />
                   </div>
                 ) : categories.length > 0 ? (
-                  <table className="table table-striped mt-3">
+                  <table className="table table-striped w-100 mt-3">
                     <thead>
                       <tr>
                         <th>Image</th>
@@ -541,15 +543,15 @@ const handleDelete = async (categoryId) => {
                           <td>{category.name}</td>
                           <td>{category.description}</td>
                           <td style={{ cursor: 'pointer' }} onClick={() => handleBarcodeClick(category.barcodeId)}>
-                            <Barcode 
-                              value={category.barcodeId} 
+                            <Barcode
+                              value={category.barcodeId}
                               width={1}
                               height={30}
                               fontSize={12}
                             />
                           </td>
                           <td style={{ cursor: 'pointer' }} onClick={() => handleQRClick(category.barcodeId)}>
-                            <QRCode 
+                            <QRCode
                               value={category.barcodeId}
                               size={50}
                               level="H"
@@ -557,20 +559,20 @@ const handleDelete = async (categoryId) => {
                           </td>
                           <td>
                             <div className="d-flex gap-2 align-items-center">
-                              <BsPencilSquare 
-                                className="text-primary" 
+                              <BsPencilSquare
+                                className="text-primary"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleModalOpen(category)}
                                 title="Edit"
                               />
-                              <BsTrash 
-                                className="text-danger" 
+                              <BsTrash
+                                className="text-danger"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleDelete(category._id)}
                                 title="Delete"
                               />
-                              <BsEye 
-                                className="text-success" 
+                              <BsEye
+                                className="text-success"
                                 style={{ cursor: 'pointer', fontSize: '1.2rem' }}
                                 onClick={() => handleViewDetails(category)}
                                 title="View Details"
@@ -689,67 +691,67 @@ const handleDelete = async (categoryId) => {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal 
-  show={showDetailModal} 
-  onHide={() => setShowDetailModal(false)}
-  size="lg"
-  centered
->
-  <Modal.Header closeButton>
-    <Modal.Title>Category Details</Modal.Title>
-  </Modal.Header>
-  
-  <Modal.Body>
-    {detailCategory && (
-      <div className="p-4 border rounded shadow-sm">
-        {/* Category Details Section */}
-        <div className="row">
-          <div className="col-md-9">
-            <div className="p-3 border rounded bg-light">
-              <h4 className="mb-2">Category:- {detailCategory.name}</h4>
-              <p className="mb-1">description :- {detailCategory.description}</p>
-              <p className="mb-0"><strong>Created:</strong> {new Date(detailCategory.createdAt).toLocaleDateString()}</p>
+      <Modal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Category Details</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {detailCategory && (
+            <div className="p-4 border rounded shadow-sm">
+              {/* Category Details Section */}
+              <div className="row">
+                <div className="col-md-9">
+                  <div className="p-3 border rounded bg-light">
+                    <h4 className="mb-2">Category:- {detailCategory.name}</h4>
+                    <p className="mb-1">description :- {detailCategory.description}</p>
+                    <p className="mb-0"><strong>Created:</strong> {new Date(detailCategory.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                {/* QR Code Section */}
+                <div className="col-md-3 align-items-center">
+                  <h5>QR Code</h5>
+                  <div className="p-2 border rounded">
+                    <QRCode
+                      value={detailCategory.barcodeId}
+                      size={80}
+                      level="H"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Barcode Section */}
+              <div className="mt-4 text-center">
+                <h5>Barcode</h5>
+                <div className="d-flex justify-content-center p-2 border rounded bg-white">
+                  <Barcode
+                    value={detailCategory.barcodeId}
+                    width={1.5}
+                    height={50}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+        </Modal.Body>
 
-          {/* QR Code Section */}
-          <div className="col-md-3 align-items-center">
-            <h5>QR Code</h5>
-            <div className="p-2 border rounded">
-              <QRCode 
-                value={detailCategory.barcodeId}
-                size={80}
-                level="H"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Barcode Section */}
-        <div className="mt-4 text-center">
-          <h5>Barcode</h5>
-          <div className="d-flex justify-content-center p-2 border rounded bg-white">
-            <Barcode 
-              value={detailCategory.barcodeId} 
-              width={1.5} 
-              height={50} 
-            />
-          </div>
-        </div>
-      </div>
-    )}
-  </Modal.Body>
-
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
-      Close
-    </Button>
-  </Modal.Footer>
-</Modal>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Image Modal */}
-      <Modal 
-        show={showImageModal} 
+      <Modal
+        show={showImageModal}
         onHide={() => setShowImageModal(false)}
         size="lg"
         centered
@@ -773,8 +775,8 @@ const handleDelete = async (categoryId) => {
       </Modal>
 
       {/* Barcode Modal */}
-      <Modal 
-        show={showBarcodeModal} 
+      <Modal
+        show={showBarcodeModal}
         onHide={() => setShowBarcodeModal(false)}
         size="lg"
         centered
@@ -785,15 +787,15 @@ const handleDelete = async (categoryId) => {
         <Modal.Body className="text-center p-4">
           {selectedBarcodeValue && (
             <div>
-              <Barcode 
+              <Barcode
                 value={selectedBarcodeValue}
                 width={2}
                 height={100}
                 fontSize={16}
               />
               <p className="mt-3">Barcode ID: {selectedBarcodeValue}</p>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 className="mt-2"
                 onClick={() => {
                   // Create a function to handle barcode download
@@ -822,8 +824,8 @@ const handleDelete = async (categoryId) => {
       </Modal>
 
       {/* QR Code Modal */}
-      <Modal 
-        show={showQRModal} 
+      <Modal
+        show={showQRModal}
         onHide={() => setShowQRModal(false)}
         size="lg"
         centered
@@ -834,14 +836,14 @@ const handleDelete = async (categoryId) => {
         <Modal.Body className="text-center p-4">
           {selectedBarcodeValue && (
             <div>
-              <QRCode 
+              <QRCode
                 value={selectedBarcodeValue}
                 size={300}
                 level="H"
               />
               <p className="mt-3">QR Code ID: {selectedBarcodeValue}</p>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 className="mt-2"
                 onClick={() => {
                   // Create a function to handle QR code download

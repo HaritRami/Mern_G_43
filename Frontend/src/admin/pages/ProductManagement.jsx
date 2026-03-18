@@ -54,75 +54,107 @@ const ProductManagement = () => {
   const [importing, setImporting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanner, setScanner] = useState(null);
+  const [sellers, setSellers] = useState([]);
+  const [selectedSeller, setSelectedSeller] = useState("");
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const userRole = savedUser?.role || savedUser?.data?.role || "";
 
   const API_URL = "http://localhost:5000/api/product";
   const CATEGORY_API_URL = "http://localhost:5000/api/category";
   const SUBCATEGORY_API_URL = "http://localhost:5000/api/sub-category";
 
-  // Fetch products
-const fetchProducts = async () => {
-  setLoading(true);
-  try {
-    const userId = Cookies.get("userId");
-
-    const response = await axios.get(API_URL, {
-      params: {
-        search: searchTerm,
-        sortField,
-        sortOrder: sortDirection,
-        page: currentPage,
-        limit: itemsPerPage
+  // Fetch sellers list (Admin only)
+  const fetchSellers = async () => {
+    try {
+      const token = savedUser?.tokens?.accessToken;
+      if (!token) return;
+      const response = await axios.get("http://localhost:5000/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      if (response.data?.success) {
+        setSellers(
+          response.data.data.filter((u) => u.role?.toLowerCase() === "seller")
+        );
       }
-    });
-
-    if (response.data.success) {
-      // ✅ Filter products by userId
-      const filteredProducts = response.data.data.filter(
-        (item) => item.userId === userId
-      );
-
-      setProducts(filteredProducts);
-      setTotalPages(response.data.pagination.pages); // keep pagination if needed
-      setTotalItems(filteredProducts.length); // update count based on filtered data
+    } catch (error) {
+      console.error("Error fetching sellers:", error);
     }
-  } catch (error) {
-    toast.error("Error fetching products!");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  // Fetch products
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const userId = Cookies.get("userId");
+
+      const response = await axios.get(API_URL, {
+        params: {
+          search: searchTerm,
+          sortField,
+          sortOrder: sortDirection,
+          page: currentPage,
+          limit: itemsPerPage
+        }
+      });
+
+      if (response.data.success) {
+        let products = response.data.data;
+
+        // Seller sees only their own products
+        if (userRole === "Seller" && userId) {
+          products = products.filter((item) => item.userId === userId);
+        }
+
+        // Admin: filter by selected seller if chosen
+        if (userRole === "Admin" && selectedSeller) {
+          products = products.filter((item) => item.userId === selectedSeller);
+        }
+
+        setProducts(products);
+        setTotalPages(response.data.pagination.pages);
+        setTotalItems(products.length);
+      }
+    } catch (error) {
+      toast.error("Error fetching products!");
+    } finally {
+      setLoading(false);
+    }
+  };
   // Fetch categories and subcategories
   const fetchCategories = async () => {
-  try {
-    const userId = Cookies.get("userId");
+    try {
+      const userId = Cookies.get("userId");
 
-    const [categoriesRes, subCategoriesRes] = await Promise.all([
-      axios.get(CATEGORY_API_URL),
-      axios.get(SUBCATEGORY_API_URL)
-    ]);
+      const [categoriesRes, subCategoriesRes] = await Promise.all([
+        axios.get(CATEGORY_API_URL),
+        axios.get(SUBCATEGORY_API_URL)
+      ]);
 
-    // ✅ Filter categories
-    const filteredCategories = categoriesRes.data.data.filter(
-      (item) => item.userId === userId
-    );
+      let cats = categoriesRes.data.data || [];
+      let subCats = subCategoriesRes.data.data || [];
 
-    // ✅ Filter subcategories
-    const filteredSubCategories = subCategoriesRes.data.data.filter(
-      (item) => item.userId === userId
-    );
+      // Seller sees only their own
+      if (userRole === "Seller" && userId) {
+        cats = cats.filter((item) => item.userId === userId);
+        subCats = subCats.filter((item) => item.userId === userId);
+      }
 
-    setCategories(filteredCategories);
-    setSubCategories(filteredSubCategories);
+      setCategories(cats);
+      setSubCategories(subCats);
+    } catch (error) {
+      toast.error("Error fetching categories!");
+    }
+  };
 
-  } catch (error) {
-    toast.error("Error fetching categories!");
-  }
-};
+  useEffect(() => {
+    if (userRole === "Admin") fetchSellers();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, [currentPage, sortField, sortDirection, searchTerm]);
+  }, [currentPage, sortField, sortDirection, searchTerm, selectedSeller]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -406,6 +438,18 @@ const fetchProducts = async () => {
                         Clear
                       </Button>
                     </InputGroup>
+                    {userRole === "Admin" && (
+                      <Form.Select
+                        value={selectedSeller}
+                        onChange={(e) => { setSelectedSeller(e.target.value); setCurrentPage(1); }}
+                        style={{ width: '200px' }}
+                      >
+                        <option value="">All Sellers</option>
+                        {sellers.map((s) => (
+                          <option key={s._id} value={s._id}>{s.name}</option>
+                        ))}
+                      </Form.Select>
+                    )}
                   </div>
                   <div className="d-flex gap-2">
                     <Button variant="primary" onClick={() => handleModalOpen()}>
@@ -473,7 +517,7 @@ const fetchProducts = async () => {
                     <Spinner animation="border" />
                   </div>
                 ) : products.length > 0 ? (
-                  <table className="table table-striped mt-3">
+                  <table className="table table-striped w-100 mt-3">
                     <thead>
                       <tr>
                         <th>Images</th>

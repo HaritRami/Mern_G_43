@@ -106,8 +106,8 @@ export async function registerUserController(request, response) {
   });
 
   try {
-    const { name, email, password, mobile } = request.body;
-    console.log('Registration data:', { name, email, mobile }); // Don't log password
+    const { name, email, password, mobile, role } = request.body;
+    console.log('Registration data:', { name, email, mobile, role }); // Don't log password
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -155,11 +155,14 @@ export async function registerUserController(request, response) {
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
+    const allowedRoles = ["User", "Seller"];
     const payload = {
       name,
       email,
       password: hashPassword,
-      mobile: mobile || null // Include mobile in payload
+      mobile: mobile || null, // Include mobile in payload
+      role: allowedRoles.includes(role) ? role : "User",
+      avatar: request.file ? `/uploads/avatars/${request.file.filename}` : null
     };
     const newUser = new User(payload);
 

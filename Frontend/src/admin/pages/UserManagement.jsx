@@ -61,9 +61,13 @@ const UserManagement = () => {
       });
 
       if (response.data && response.data.success) {
-        setUsers(response.data.data);
-        setTotalPages(response.data.pagination.pages);
-        setTotalItems(response.data.pagination.total);
+        // Only show users with role "User" (exclude Admin and Seller)
+        const usersOnly = response.data.data.filter(
+          (u) => u.role?.toLowerCase() === "user"
+        );
+        setUsers(usersOnly);
+        setTotalPages(Math.ceil(usersOnly.length / itemsPerPage));
+        setTotalItems(usersOnly.length);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error fetching users!");
@@ -175,7 +179,7 @@ const UserManagement = () => {
     try {
       setLoading(true);
       const savedUser = JSON.parse(localStorage.getItem("user"));
-      
+
       if (!savedUser || !savedUser.tokens || !savedUser.tokens.accessToken) {
         toast.error("Authentication token not found!");
         return;
@@ -289,7 +293,7 @@ const UserManagement = () => {
                         onChange={handleSearch}
                       />
                       {searchTerm && (
-                        <Button 
+                        <Button
                           variant="outline-secondary"
                           onClick={() => setSearchTerm('')}
                         >
@@ -302,8 +306,8 @@ const UserManagement = () => {
                     <Button variant="primary" onClick={() => handleModalOpen()}>
                       Add New User
                     </Button>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       onClick={exportToExcel}
                       title="Export to Excel"
                     >
@@ -318,7 +322,7 @@ const UserManagement = () => {
                   </div>
                 ) : users.length > 0 ? (
                   <div className="table-responsive">
-                    <table className="table table-striped mt-3">
+                    <table className="table table-striped w-100 mt-3">
                       <thead>
                         <tr>
                           <th>Avatar</th>
