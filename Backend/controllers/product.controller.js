@@ -72,6 +72,9 @@ export const getAllProducts = async (req, res) => {
   try {
     const {
       search,
+      category,
+      minPrice,
+      maxPrice,
       sortField = 'createdAt',
       sortOrder = 'desc',
       page = 1,
@@ -81,12 +84,20 @@ export const getAllProducts = async (req, res) => {
     // Build search query
     let query = {};
     if (search) {
-      query = {
-        $or: [
-          { name: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
-        ]
-      };
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
     // Calculate pagination
@@ -369,6 +380,52 @@ export const getProductsByCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching products by category",
+      error: error.message
+    });
+  }
+};
+
+// Global Search API (Live Search)
+export const searchProducts = async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.trim() === '') {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // Sanitize query to avoid regex injection
+    const sanitizedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Perform partial, case-insensitive match on name and description
+    // Limits drastically at DB level (Top 10) for pure performance payload
+    const products = await ProductModel.find({
+      $or: [
+        { name: { $regex: sanitizedQuery, $options: 'i' } },
+        { description: { $regex: sanitizedQuery, $options: 'i' } },
+      ],
+      Public: true // Only return active products
+    })
+    .populate('category subCategory')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+    // Filter populated images via the centralized domain
+    const productsWithFullUrls = products.map(product => ({
+      ...product.toObject(),
+      images: product.images.map(image => `http://localhost:5000${image}`)
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: productsWithFullUrls
+    });
+    
+  } catch (error) {
+    console.error("Fuzzy Search Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching live search results.",
       error: error.message
     });
   }

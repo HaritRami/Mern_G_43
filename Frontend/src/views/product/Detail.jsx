@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import { lazy, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -6,78 +7,71 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ProductDetailView = () => {
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [quantity, setQuantity] = useState(1);
-  const { productId, categorySlug } = useParams();
+  const { productId } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const toSlug = (name) =>
-      name
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replace(/&/g, 'and')
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
+    // Scroll to top automatically when changing products
+    window.scrollTo(0, 0);
 
-    const fetchProducts = async () => {
+    const loadProductData = async () => {
       try {
         setLoading(true);
-
-        // If route contains a category slug, resolve it to the real category name and fetch filtered products
-        const categoryProductsLS = localStorage.getItem('categoryProducts');
-        let productsData = [];
-
-        if (categorySlug && !categoryProductsLS) {
-          // Resolve slug -> category name
-          const catResp = await axios.get('http://localhost:5000/api/category');
-          const cats = catResp.data?.data || catResp.data || [];
-          const match = cats.find(c => toSlug(c.name) === categorySlug);
-          const realName = match ? match.name : decodeURIComponent(categorySlug).replace(/-/g, ' ');
-
-          // Fetch by real category name
-          const resp = await axios.get(`http://localhost:5000/api/product/category/${encodeURIComponent(realName)}`);
-          if (resp.data.success) {
-            productsData = resp.data.data;
-            setProducts(productsData);
-          }
-        } else if (categoryProductsLS) {
-          // Use the filtered products from localStorage (set by TopMenu)
-          productsData = JSON.parse(categoryProductsLS);
-          setProducts(productsData);
-          localStorage.removeItem('categoryProducts');
-        } else {
-          // Fallback: fetch all products
-          const response = await axios.get('http://localhost:5000/api/product');
-          if (response.data.success) {
-            productsData = response.data.data;
-            setProducts(productsData);
-          }
+        if (!productId) {
+           setLoading(false);
+           return;
         }
 
-        // Set selected product logic
-        if (productId) {
-          const product = productsData.find(p => p._id === productId);
-          if (product) setSelectedProduct(product);
-        } else if (productsData.length > 0) {
-          setSelectedProduct(productsData[0]);
+        // 1. Fetch exact product
+        const response = await axios.get(`${GLOBAL_API_URL}/product/${productId}`);
+        const product = response.data;
+        
+        if (product) {
+          setSelectedProduct(product);
+
+          // Manage Recently Viewed in LocalStorage
+          let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+          viewed = viewed.filter(p => p._id !== product._id); // remove duplicates
+          viewed.unshift({
+             _id: product._id,
+             name: product.name,
+             price: product.price,
+             images: product.images
+          }); 
+          if (viewed.length > 8) viewed = viewed.slice(0, 8); // memory constrain
+          localStorage.setItem('recentlyViewed', JSON.stringify(viewed));
+          setRecentlyViewed(viewed);
+
+          // 2. Fetch Related (same category)
+          try {
+             const catId = product.category?.[0]?._id || product.category?.[0];
+             if (catId) {
+               const relResp = await axios.get(`${GLOBAL_API_URL}/product?category=${catId}&limit=5`);
+               if (relResp.data?.success) {
+                 const related = relResp.data.data.filter(p => p._id !== product._id).slice(0, 4);
+                 setRelatedProducts(related); 
+               }
+             }
+          } catch(e) { }
         }
+
       } catch (error) {
-        console.error('Error fetching products:', error);
-        toast.error('Error loading products');
+        console.error('Error fetching product:', error);
+        toast.error('Product not found');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
-  }, [productId, categorySlug]);
+    loadProductData();
+  }, [productId]);
 
   const getAuthConfig = () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -103,7 +97,7 @@ const ProductDetailView = () => {
       const userId = savedUser.id;
 
       const response = await axios.post(
-        `http://localhost:5000/api/cart/${userId}/cart`,
+        `${GLOBAL_API_URL}/cart/${userId}/cart`,
         {
           productId: selectedProduct._id,
           quantity: quantity
@@ -140,7 +134,7 @@ const ProductDetailView = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center">
+      <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
         <div className="spinner-border text-primary">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -190,7 +184,7 @@ const ProductDetailView = () => {
         <img
           src={product.images[0].startsWith('http')
             ? product.images[0]
-            : `http://localhost:5000${product.images[0]}`}
+            : `${GLOBAL_DOMAIN_URL}${product.images[0]}`}
           className="product-image"
           alt={product.name}
           style={{
@@ -205,49 +199,18 @@ const ProductDetailView = () => {
     );
   };
 
-  // Update the thumbnail images section
-  const renderThumbnails = (product) => {
-    if (!product.images || product.images.length === 0) return null;
-
-    return (
-      <div className="product-thumbnails">
-        {product.images.map((img, index) => (
-          <div
-            key={index}
-            className={`thumbnail-container ${selectedProduct.images[0] === img ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedProduct({
-                ...selectedProduct,
-                images: [img, ...selectedProduct.images.filter(i => i !== img)]
-              });
-            }}
-          >
-            <img
-              src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
-              alt={`${product.name} view ${index + 1}`}
-              className="thumbnail-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/80';
-              }}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   // Update the product cards section
   const renderProductCard = (product) => (
     <div
       className={`product-card card h-100 ${selectedProduct._id === product._id ? 'selected' : ''}`}
-      onClick={() => setSelectedProduct(product)}
+      onClick={() => navigate(`/product/${product._id}`)}
+      style={{ cursor: "pointer" }}
     >
       <div className="card-image-container">
         <img
           src={product.images[0]?.startsWith('http')
             ? product.images[0]
-            : `http://localhost:5000${product.images[0]}`}
+            : `${GLOBAL_DOMAIN_URL}${product.images[0]}`}
           className="card-img-top"
           alt={product.name}
           onError={(e) => {
@@ -285,18 +248,15 @@ const ProductDetailView = () => {
       align-items: center;
       justify-content: center;
     }
-
     .product-image {
       width: 100%;
       height: 100%;
       object-fit: contain;
       transition: transform 0.2s ease-out;
     }
-
     .product-image-container:hover .product-image {
       transform: scale(2);
     }
-
     .product-thumbnails {
       display: flex;
       gap: 10px;
@@ -304,7 +264,6 @@ const ProductDetailView = () => {
       margin-top: 20px;
       flex-wrap: wrap;
     }
-
     .thumbnail-container {
       width: 80px;
       height: 80px;
@@ -315,42 +274,34 @@ const ProductDetailView = () => {
       transition: all 0.2s ease;
       opacity: 0.7;
     }
-
     .thumbnail-container:hover {
       opacity: 0.9;
     }
-
     .thumbnail-container.active {
       border-color: #0d6efd;
       opacity: 1;
     }
-
     .thumbnail-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-
     .product-details {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       padding: 24px;
     }
-
     .product-card {
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
     .product-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-
     .product-card.selected {
       border-color: #0d6efd;
     }
-
     .card-image-container {
       height: 200px;
       overflow: hidden;
@@ -359,26 +310,22 @@ const ProductDetailView = () => {
       justify-content: center;
       background: #f8f9fa;
     }
-
     .card-image-container img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       transition: transform 0.3s ease;
     }
-
     .quantity-input {
       width: 150px !important;
       margin-right: 1rem;
     }
-
     .quantity-input .form-control {
       text-align: center;
       border-left: 0;
       border-right: 0;
       background-color: white;
     }
-
     .quantity-input .btn {
       width: 40px;
       padding: 0.375rem;
@@ -387,13 +334,11 @@ const ProductDetailView = () => {
       justify-content: center;
       border-color: #dee2e6;
     }
-
     .quantity-input .btn:hover {
       background-color: #0d6efd;
       color: white;
       border-color: #0d6efd;
     }
-
     .add-to-cart-btn {
       flex: 1;
       padding: 0.5rem 2rem;
@@ -404,52 +349,57 @@ const ProductDetailView = () => {
       gap: 0.5rem;
       transition: all 0.2s ease;
     }
-
     .add-to-cart-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
     }
-
-    @media (max-width: 768px) {
-      .product-image-container {
-        height: 350px;
-      }
-
-      .product-image-container:hover .product-image {
-        transform: scale(1.5);
-      }
-
-      .thumbnail-container {
-        width: 60px;
-        height: 60px;
-      }
-
-      .quantity-input {
-        width: 120px !important;
-      }
-
-      .add-to-cart-btn {
-        padding: 0.5rem 1rem;
-      }
+    .trending-container {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 0.5rem;
+      scrollbar-width: thin;
+    }
+    .trending-item {
+      min-width: 150px;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .trending-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .trending-image {
+      height: 120px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: #f8f9fa;
+    }
+    .trending-meta {
+      padding: 0.5rem;
+    }
+    .trending-name {
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
     }
   `;
 
   return (
     <>
       <ToastContainer />
-      <div className="container-fluid mt-3">
+      <div className="container-fluid py-4 min-vh-100 bg-light">
         <style>{productStyles}</style>
         {/* Product Header Section */}
         <div className="row mb-4">
           <div className="col-12">
             <nav aria-label="breadcrumb">
               <ol className="breadcrumb">
-                <li className="breadcrumb-item"><Link to="/home">Home</Link></li>
-                <li className="breadcrumb-item">
-                  <Link to="/products">
-                    {selectedProduct.category?.[0]?.name || 'Products'}
-                  </Link>
-                </li>
+                <li className="breadcrumb-item"><Link to="/">Home</Link></li>
+                <li className="breadcrumb-item"><Link to="/products">All Products</Link></li>
                 <li className="breadcrumb-item active" aria-current="page">{selectedProduct.name}</li>
               </ol>
             </nav>
@@ -460,23 +410,24 @@ const ProductDetailView = () => {
         <div className="row">
           {/* Left Column - Images */}
           <div className="col-md-6 mb-4">
-            <div className="main-image-container position-relative overflow-hidden">
+            <div className="main-image-container position-relative overflow-hidden bg-white p-2 rounded shadow-sm border">
               {renderMainImage(selectedProduct)}
             </div>
 
             {/* Thumbnail Images with click to change main image */}
-            <div className="d-flex gap-2 justify-content-center">
+            <div className="d-flex gap-2 justify-content-center mt-3">
               {selectedProduct.images?.map((img, index) => (
                 <img
                   key={index}
-                  src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
-                  className="border rounded cursor-pointer"
+                  src={img.startsWith('http') ? img : `${GLOBAL_DOMAIN_URL}${img}`}
+                  className="border rounded cursor-pointer bg-white"
                   style={{
                     width: '80px',
                     height: '80px',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
                     opacity: selectedProduct.images[0] === img ? 1 : 0.5,
-                    transition: 'opacity 0.2s ease'
+                    transition: 'opacity 0.2s ease',
+                    padding: '4px'
                   }}
                   alt={`${selectedProduct.name} view ${index + 1}`}
                   onClick={() => {
@@ -499,7 +450,7 @@ const ProductDetailView = () => {
 
           {/* Right Column - Product Details */}
           <div className="col-md-6">
-            <div className="product-details p-3">
+            <div className="product-details p-4">
               <h1 className="h3 mb-2">{selectedProduct.name}</h1>
 
               {/* Price Section */}
@@ -526,10 +477,6 @@ const ProductDetailView = () => {
                       <td className="text-muted">Category:</td>
                       <td>{selectedProduct.category?.[0]?.name}</td>
                     </tr>
-                    {/* <tr> */}
-                    {/* <td className="text-muted">Sub Category:</td> */}
-                    {/* <td>{selectedProduct.subCategory?.[0]?.name}</td> */}
-                    {/* </tr> */}
                     <tr>
                       <td className="text-muted">Barcode:</td>
                       <td>{selectedProduct.barcodeId}</td>
@@ -540,15 +487,15 @@ const ProductDetailView = () => {
 
               {/* Description */}
               <div className="mb-4">
-                <h5>Description</h5>
-                <p>{selectedProduct.description}</p>
+                <h5 className="fw-bold">Description</h5>
+                <p className="text-muted">{selectedProduct.description}</p>
               </div>
 
               {/* Add to Cart Section */}
               <div className="d-flex align-items-center mb-4">
-                <div className="input-group quantity-input">
+                <div className="input-group quantity-input shadow-sm">
                   <button
-                    className="btn btn-outline-secondary"
+                    className="btn btn-light border"
                     type="button"
                     onClick={() => handleQuantityChange(-1)}
                     disabled={quantity <= 1}
@@ -557,12 +504,12 @@ const ProductDetailView = () => {
                   </button>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control text-center fw-bold"
                     value={quantity}
                     readOnly
                   />
                   <button
-                    className="btn btn-outline-secondary"
+                    className="btn btn-light border"
                     type="button"
                     onClick={() => handleQuantityChange(1)}
                     disabled={quantity >= selectedProduct.stock}
@@ -571,7 +518,7 @@ const ProductDetailView = () => {
                   </button>
                 </div>
                 <button
-                  className="btn btn-primary add-to-cart-btn"
+                  className="btn btn-primary add-to-cart-btn shadow-sm"
                   onClick={handleAddToCart}
                   disabled={selectedProduct.stock === 0}
                 >
@@ -583,59 +530,59 @@ const ProductDetailView = () => {
           </div>
         </div>
 
-        {/* Trending products (horizontal scroller) */}
-        <div className="row mt-5">
-          <div className="col-12">
-            <div className="card p-3 mb-3">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Trending right now</h5>
-                <small className="text-muted">Based on popularity</small>
-              </div>
-
-              <div className="trending-container">
-                {(products.filter(p => p.isHot).length ? products.filter(p => p.isHot) : products)
-                  .slice(0, 12)
-                  .map((p) => (
-                    <div
-                      key={p._id}
-                      className="trending-item"
-                      onClick={() => {
-                        // immediate UI feedback then navigate to product route
-                        setSelectedProduct(p);
-                        navigate(`/product/${p._id}`);
-                      }}
-                      role="button"
-                    >
-                      <div
-                        className="trending-image"
-                        style={{
-                          backgroundImage: `url(${p.images && p.images[0] ? (p.images[0].startsWith('http') ? p.images[0] : `http://localhost:5000${p.images[0]}`) : '/NO_IMG.png'})`
-                        }}
-                      />
-                      <div className="trending-meta">
-                        <div className="trending-name text-truncate">{p.name}</div>
-                        <div className="trending-price text-primary fw-bold">${p.price}</div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* All Products Section */}
-        <div className="row mt-5">
-          <div className="col-12">
-            <h3 className="mb-4">Similar Products</h3>
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-              {products.map((product) => (
-                <div key={product._id} className="col">
-                  {renderProductCard(product)}
+        {/* Recently Viewed Section */}
+        {recentlyViewed.length > 1 && (
+          <div className="row mt-5">
+            <div className="col-12">
+              <div className="card p-4 mb-3 shadow-sm border-0">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0 fw-bold">Recently Viewed</h5>
+                  <small className="text-muted">Jump right back</small>
                 </div>
-              ))}
+  
+                <div className="trending-container">
+                  {recentlyViewed.filter(p => p._id !== selectedProduct._id).map((p) => (
+                      <div
+                        key={p._id}
+                        className="trending-item bg-white"
+                        onClick={() => {
+                          navigate(`/product/${p._id}`);
+                        }}
+                        role="button"
+                      >
+                        <div
+                          className="trending-image"
+                          style={{
+                            backgroundImage: `url(${p.images && p.images[0] ? (p.images[0].startsWith('http') ? p.images[0] : `${GLOBAL_DOMAIN_URL}${p.images[0]}`) : '/NO_IMG.png'})`
+                          }}
+                        />
+                        <div className="trending-meta border-top bg-light">
+                          <div className="trending-name text-truncate fw-semibold">{p.name}</div>
+                          <div className="trending-price text-primary fw-bold">${p.price}</div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Similar Products Section */}
+        {relatedProducts.length > 0 && (
+          <div className="row mt-5">
+            <div className="col-12 border-top pt-5">
+              <h4 className="mb-4 fw-bold">Similar Products</h4>
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+                {relatedProducts.map((product) => (
+                  <div key={product._id} className="col">
+                    {renderProductCard(product)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

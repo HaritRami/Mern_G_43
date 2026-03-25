@@ -12,6 +12,7 @@ import orderRouter from './route/order.routes.js';
 import categoryRouter from './route/category.routes.js';
 import addressRouter from './route/address.routes.js';
 import productRouter from './route/product.routes.js';
+import couponRouter from './route/coupon.route.js';
 import { verifyEmailController } from './controllers/user.controller.js';
 import imageUplodeRouter from './route/image_uplode.routes.js';
 import path from 'path';
@@ -107,6 +108,7 @@ app.use('/api/product', productRouter);
 app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRouter);
 app.use('/api/address', addressRouter);
+app.use('/api/coupon', couponRouter);
 
 // seller-only routes
 app.use('/api/admin/users', UserRoute);

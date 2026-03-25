@@ -23,10 +23,14 @@ const addressSchema = new mongoose.Schema(
       type: String
     },
     mobile: {
-      type: Number,
+      type: String,
       default: null
     },
     is_delete: {
+      type: Boolean,
+      default: false
+    },
+    isDefault: {
       type: Boolean,
       default: false
     }

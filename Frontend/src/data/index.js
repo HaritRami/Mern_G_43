@@ -18,7 +18,7 @@ export const data = {
   ],
   iconProducts: [
     {
-      to: "/product/detail",
+      to: "/products",
       img: "IconLaptop",
       title: "Men's Clothing",
       text: " Upto 20% off",
@@ -26,7 +26,7 @@ export const data = {
       cssClass: "text-primary",
     },
     {
-      to: "/product/detail",
+      to: "/products",
       img: "IconHeadset",
       title: "Women's Clothing",
       text: " Upto 50% off",
@@ -34,7 +34,7 @@ export const data = {
       cssClass: "text-secondary",
     },
     {
-      to: "/product/detail",
+      to: "/products",
       img: "IconPhone",
       title: "Smartwatch",
       text: " Upto 20% off",
@@ -42,7 +42,7 @@ export const data = {
       cssClass: "text-danger",
     },
     {
-      to: "/product/detail",
+      to: "/products",
       img: "IconTv",
       title: "Footwear",
       text: " Upto 25% off",
@@ -54,7 +54,7 @@ export const data = {
     {
       id: 1,
       sku: "FAS-01",
-      link: "/product/detail",
+      link: "/products",
       name: "Great product name goes here",
       img: "../../images/products/tshirt_red_480x400.webp",
       price: 180,
@@ -71,7 +71,7 @@ export const data = {
     {
       id: 2,
       sku: "FAS-02",
-      link: "/product/detail",
+      link: "/products",
       name: "Great product name goes here",
       img: "../../images/products/tshirt_grey_480x400.webp",
       price: 475,
@@ -88,7 +88,7 @@ export const data = {
     {
       id: 3,
       sku: "FAS-03",
-      link: "/product/detail",
+      link: "/products",
       name: "Great product name goes here",
       img: "../../images/products/tshirt_black_480x400.webp",
       price: 1900,
@@ -105,7 +105,7 @@ export const data = {
     {
       id: 4,
       sku: "FAS-04",
-      link: "/product/detail",
+      link: "/products",
       name: "Great product name goes here",
       img: "../../images/products/tshirt_green_480x400.webp",
       price: 10,

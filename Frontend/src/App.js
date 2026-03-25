@@ -5,6 +5,7 @@ import "bootstrap/dist/js/bootstrap.bundle.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.min.css";
 import { UserProvider } from "./context/UserContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const TopMenu = lazy(() => import("./components/TopMenu"));
 const Header = lazy(() => import("./components/Header"));
@@ -23,7 +24,8 @@ const OrdersView = lazy(() => import("./views/account/Orders"));
 const WishlistView = lazy(() => import("./views/account/Wishlist"));
 const NotificationView = lazy(() => import("./views/account/Notification"));
 const MyProfileView = lazy(() => import("./views/account/MyProfile"));
-const ProductListView = lazy(() => import("./views/product/List"));
+const CategoryListView = lazy(() => import("./views/product/List"));
+const ProductListView = lazy(() => import("./views/product/ProductList"));
 const ProductDetailView = lazy(() => import("./views/product/Detail"));
 const StarZoneView = lazy(() => import("./views/product/StarZone"));
 const CartView = lazy(() => import("./views/cart/Cart"));
@@ -41,6 +43,7 @@ const BlogDetailView = lazy(() => import("./views/blog/Detail"));
 const Dashboard = lazy(() => import("./admin/pages/Deashboed"));
 const CategoryManagement = lazy(() => import("./admin/pages/CategoryManagement"));
 const UserManagement = lazy(() => import("./admin/pages/UserManagement"));
+const OrderManagement = lazy(() => import("./admin/pages/OrderManagement"));
 
 const SubCategoryManagement = lazy(() => import("./admin/pages/SubCategoryManagement"));
 const ProductManagement = lazy(() => import("./admin/pages/ProductManagement"));
@@ -57,6 +60,7 @@ const AdminV2Sellers = lazy(() => import("./admin/v2/pages/Sellers"));
 const AdminV2Orders = lazy(() => import("./admin/v2/pages/Orders"));
 const AdminV2Profile = lazy(() => import("./admin/v2/pages/Profile"));
 const AdminV2Settings = lazy(() => import("./admin/v2/pages/Settings"));
+const AdminV2Coupons = lazy(() => import("./admin/v2/pages/Coupons"));
 // Layout component that includes Header, TopMenu, and Footer
 const Layout = ({ children }) => (
   <React.Fragment>
@@ -90,19 +94,19 @@ function App() {
               <Route path="/account/signin" element={<SignInView />} />
               <Route path="/account/signup" element={<SignUpView />} />
               <Route path="/account/forgotpassword" element={<ForgotPasswordView />} />
-              <Route path="/account/profile" element={<Layout><MyProfileView /></Layout>} />
-              <Route path="/account/orders" element={<Layout><OrdersView /></Layout>} />
-              <Route path="/account/wishlist" element={<Layout><WishlistView /></Layout>} />
-              <Route path="/account/notification" element={<Layout><NotificationView /></Layout>} />
-              <Route path="/category" element={<Layout><ProductListView /></Layout>} />
-              <Route path="/product/detail" element={<Layout><ProductDetailView /></Layout>} />
+              <Route path="/account/profile" element={<ProtectedRoute><Layout><MyProfileView /></Layout></ProtectedRoute>} />
+              <Route path="/account/orders" element={<ProtectedRoute><Layout><OrdersView /></Layout></ProtectedRoute>} />
+              <Route path="/account/wishlist" element={<ProtectedRoute><Layout><WishlistView /></Layout></ProtectedRoute>} />
+              <Route path="/account/notification" element={<ProtectedRoute><Layout><NotificationView /></Layout></ProtectedRoute>} />
+              <Route path="/categories" element={<Layout><CategoryListView /></Layout>} />
+              <Route path="/products" element={<Layout><ProductListView /></Layout>} />
               <Route path="/star/zone" element={<Layout><StarZoneView /></Layout>} />
               <Route path="/cart" element={<Layout><CartView /></Layout>} />
-              <Route path="/checkout" element={<Layout><CheckoutView /></Layout>} />
+              <Route path="/checkout" element={<ProtectedRoute><Layout><CheckoutView /></Layout></ProtectedRoute>} />
               <Route path="/order-confirmation" element={<Layout><OrderConfirmation /></Layout>} />
               <Route path="/track/:id" element={<Layout><Tracking /></Layout>} />
               <Route path="/create-or-edit-product" element={<Layout><CreateOrEditProduct /></Layout>} />
-              <Route path="/invoice" element={<Layout><InvoiceView /></Layout>} />
+              <Route path="/invoice" element={<ProtectedRoute><Layout><InvoiceView /></Layout></ProtectedRoute>} />
               <Route path="/documentation" element={<Layout><DocumentationView /></Layout>} />
               <Route path="/contact-us" element={<Layout><ContactUsView /></Layout>} />
               <Route path="/support" element={<Layout><SupportView /></Layout>} />
@@ -113,11 +117,12 @@ function App() {
               {/* Admin Routes (legacy panel) */}
               <Route path="/seller" element={<AdminLayout><Dashboard /></AdminLayout>} />
               <Route path="/seller/product-list" element={<AdminLayout><ProductList /></AdminLayout>} />
-              <Route path="/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
-              <Route path="/sub-categories" element={<AdminLayout><SubCategoryManagement /></AdminLayout>} />
-              <Route path="/products" element={<AdminLayout><ProductManagement /></AdminLayout>} />
-              <Route path="/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
-              <Route path="/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+              <Route path="/seller/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
+              <Route path="/seller/orders" element={<AdminLayout><OrderManagement /></AdminLayout>} />
+              <Route path="/seller/sub-categories" element={<AdminLayout><SubCategoryManagement /></AdminLayout>} />
+              <Route path="/seller/products" element={<AdminLayout><ProductManagement /></AdminLayout>} />
+              <Route path="/seller/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
+              <Route path="/seller/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
 
               {/* Admin Routes (new panel) */}
               <Route path="/admin" element={<AdminV2Layout><AdminV2Dashboard /></AdminV2Layout>} />
@@ -129,12 +134,8 @@ function App() {
               <Route path="/admin/orders" element={<AdminV2Layout><AdminV2Orders /></AdminV2Layout>} />
               <Route path="/admin/profile" element={<AdminV2Layout><AdminV2Profile /></AdminV2Layout>} />
               <Route path="/admin/settings" element={<AdminV2Layout><AdminV2Settings /></AdminV2Layout>} />
+              <Route path="/admin/coupons" element={<AdminV2Layout><AdminV2Coupons /></AdminV2Layout>} />
 
-              {/* Add these new routes for category products (use slug param for clean URLs) */}
-              <Route
-                path="/products/category/:categorySlug"
-                element={<Layout><ProductDetailView /></Layout>}
-              />
               <Route
                 path="/product/:productId"
                 element={<Layout><ProductDetailView /></Layout>}

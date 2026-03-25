@@ -4,7 +4,8 @@ import {
   getCart,
   updateCartQuantity,
   removeFromCart,
-  getCartSummary
+  getCartSummary,
+  clearCart
 } from "../controllers/cart.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 
@@ -27,5 +28,7 @@ cartRoutes.put("/cart/:cartProductId", updateCartQuantity);
 
 // Remove item from cart
 cartRoutes.delete("/cart/:cartProductId", removeFromCart);
+// Clear cart
+cartRoutes.delete("/:userId/clear", clearCart);
 
 export default cartRoutes;

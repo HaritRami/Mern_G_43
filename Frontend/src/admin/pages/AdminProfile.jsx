@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -36,7 +37,7 @@ const AdminProfile = () => {
     const navigate = useNavigate();
     const editableFieldRefs = useRef({});
 
-    const API_URL = "http://localhost:5000/api/user";
+    const API_URL = `${GLOBAL_API_URL}/user`;
 
     useEffect(() => {
         const checkAdminAccess = () => {
@@ -91,7 +92,7 @@ const AdminProfile = () => {
                 bio: savedUser.bio || "",
             });
             if (savedUser.avatar) {
-                setPreviewImage(`http://localhost:5000${savedUser.avatar}`);
+                setPreviewImage(`${GLOBAL_DOMAIN_URL}${savedUser.avatar}`);
             }
         } catch (error) {
             console.error("Error fetching user data:", error);
@@ -339,7 +340,7 @@ const AdminProfile = () => {
                                             </div>
                                         )}
                                         <img
-                                            src={previewImage || (userData?.avatar ? `http://localhost:5000${userData.avatar}` : "assets/img/profile-img.jpg")}
+                                            src={previewImage || (userData?.avatar ? `${GLOBAL_DOMAIN_URL}${userData.avatar}` : "assets/img/profile-img.jpg")}
                                             alt="Profile"
                                             className="rounded-circle profile-image w-100 h-100"
                                             style={{ objectFit: "cover" }}

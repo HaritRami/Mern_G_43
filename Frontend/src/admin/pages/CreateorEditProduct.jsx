@@ -1,9 +1,10 @@
+import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = `${GLOBAL_API_URL}`;
 
 const CreateOrEditProduct = () => {
   const location = useLocation();

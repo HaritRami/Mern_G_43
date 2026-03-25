@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import PageTitle from "../components/PageTitle";
 import { Modal, Button, Form, Spinner, InputGroup, FormControl } from "react-bootstrap";
@@ -47,8 +48,8 @@ const SubCategoryManagement = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedBarcodeValue, setSelectedBarcodeValue] = useState('');
 
-  const API_URL = "http://localhost:5000/api/sub-category";
-  const CATEGORY_API_URL = "http://localhost:5000/api/category";
+  const API_URL = `${GLOBAL_API_URL}/sub-category`;
+  const CATEGORY_API_URL = `${GLOBAL_API_URL}/category`;
 
   // Fetch subcategories with updated response structure
   const fetchSubCategories = async () => {
@@ -338,10 +339,10 @@ const SubCategoryManagement = () => {
             <td>
               {subCategory.image && (
                 <img
-                  src={`http://localhost:5000${subCategory.image}`}
+                  src={`${GLOBAL_DOMAIN_URL}${subCategory.image}`}
                   alt={subCategory.name}
                   style={{ width: '50px', height: '50px', cursor: 'pointer', objectFit: 'cover' }}
-                  onClick={() => handleImageClick(`http://localhost:5000${subCategory.image}`)}
+                  onClick={() => handleImageClick(`${GLOBAL_DOMAIN_URL}${subCategory.image}`)}
                 />
               )}
             </td>
@@ -505,7 +506,7 @@ const SubCategoryManagement = () => {
               {(selectedImage || (selectedSubCategory && selectedSubCategory.image)) && (
                 <div className="mt-2">
                   <img
-                    src={selectedImage ? URL.createObjectURL(selectedImage) : `http://localhost:5000${selectedSubCategory.image}`}
+                    src={selectedImage ? URL.createObjectURL(selectedImage) : `${GLOBAL_DOMAIN_URL}${selectedSubCategory.image}`}
                     alt="Preview"
                     style={{
                       maxWidth: '200px',
@@ -542,7 +543,7 @@ const SubCategoryManagement = () => {
                 <div>
                   <p><strong>Image:</strong></p>
                   <img
-                    src={`http://localhost:5000${detailSubCategory.image}`}
+                    src={`${GLOBAL_DOMAIN_URL}${detailSubCategory.image}`}
                     alt={detailSubCategory.name}
                     style={{ maxWidth: '100%', height: 'auto' }}
                   />

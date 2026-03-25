@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import { lazy, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -284,7 +285,7 @@ const CartView = () => {
       const userId = savedUser.id;
 
       const response = await axios.get(
-        `http://localhost:5000/api/cart/${userId}/cart`,
+        `${GLOBAL_API_URL}/cart/${userId}/cart`,
         authConfig
       );
 
@@ -314,7 +315,7 @@ const CartView = () => {
       if (!authConfig) return;
 
       const response = await axios.put(
-        `http://localhost:5000/api/cart/cart/${cartProductId}`,
+        `${GLOBAL_API_URL}/cart/cart/${cartProductId}`,
         { quantity: newQuantity },
         authConfig
       );
@@ -342,7 +343,7 @@ const CartView = () => {
       if (!authConfig) return;
 
       const response = await axios.delete(
-        `http://localhost:5000/api/cart/cart/${cartProductId}`,
+        `${GLOBAL_API_URL}/cart/cart/${cartProductId}`,
         authConfig
       );
       
@@ -406,16 +407,37 @@ const CartView = () => {
         ) : (
           <div className="row g-4">
             <div className="col-lg-8">
-              {cartItems.map((item) => (
+              {cartItems.map((item) => {
+                if (!item.productId) {
+                  return (
+                    <div key={item._id} className="cart-item">
+                      <div className="row align-items-center">
+                        <div className="col-md-9 text-danger fw-bold">
+                          This product is no longer available.
+                        </div>
+                        <div className="col-md-3 text-end">
+                          <button 
+                            className="remove-btn"
+                            onClick={() => handleRemoveItem(item._id)}
+                            title="Remove item"
+                          >
+                            <i className="bi bi-trash"></i> Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
                 <div key={item._id} className="cart-item">
                   <div className="row align-items-center">
                     <div className="col-md-3">
                       <img
-                        src={item.productId.images[0]?.startsWith('http') 
+                        src={item?.productId?.images?.[0]?.startsWith('http') 
                           ? item.productId.images[0] 
-                          : `http://localhost:5000${item.productId.images[0]}`}
+                          : item?.productId?.images?.[0] ? `${GLOBAL_DOMAIN_URL}${item.productId.images[0]}` : 'https://via.placeholder.com/120'}
                         className="product-image"
-                        alt={item.productId.name}
+                        alt={item?.productId?.name || 'Product'}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'https://via.placeholder.com/120';
@@ -426,13 +448,13 @@ const CartView = () => {
                       <div className="row align-items-center">
                         <div className="col-md-5">
                           <Link
-                            to={`/product/${item.productId._id}`}
+                            to={`/product/${item?.productId?._id}`}
                             className="product-name"
                           >
-                            {item.productId.name}
+                            {item?.productId?.name || 'Unknown Product'}
                           </Link>
                           <p className="text-muted mb-0 small">
-                            {item.productId.description}
+                            {item?.productId?.description || 'No description available.'}
                           </p>
                         </div>
                         <div className="col-md-3">
@@ -461,10 +483,10 @@ const CartView = () => {
                         </div>
                         <div className="col-md-3">
                           <div className="price-tag">
-                            ${(item.productId.price * item.quantity).toFixed(2)}
+                            ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
                           </div>
                           <div className="unit-price">
-                            ${item.productId.price.toFixed(2)} each
+                            ${(item?.productId?.price || 0).toFixed(2)} each
                           </div>
                         </div>
                         <div className="col-md-1">
@@ -480,7 +502,7 @@ const CartView = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ); })}
 
               <div className="delivery-info mt-4">
                 <i className="bi bi-truck"></i>

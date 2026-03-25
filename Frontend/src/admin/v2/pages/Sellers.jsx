@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../../config/apiConfig';
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -6,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
 import { Modal, Button, Form, Spinner } from "react-bootstrap";
 
-const API_URL = (process.env.REACT_APP_API_URL || "http://localhost:5000/api/").replace(/\/+$/, "");
+const API_URL = (process.env.REACT_APP_API_URL || `${GLOBAL_API_URL}/`).replace(/\/+$/, "");
 
 const Sellers = () => {
     const [sellers, setSellers] = useState([]);
@@ -227,7 +228,7 @@ const Sellers = () => {
                                                     <img
                                                         src={
                                                             seller.avatar
-                                                                ? `http://localhost:5000${seller.avatar}`
+                                                                ? `${GLOBAL_DOMAIN_URL}${seller.avatar}`
                                                                 : "https://ui-avatars.com/api/?name=" + encodeURIComponent(seller.name) + "&background=4154f1&color=fff&size=40"
                                                         }
                                                         alt={seller.name}

@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import PageTitle from "../components/PageTitle";
 import { Modal, Button, Form, Spinner, InputGroup, FormControl } from "react-bootstrap";
@@ -59,16 +60,16 @@ const ProductManagement = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userRole = savedUser?.role || savedUser?.data?.role || "";
 
-  const API_URL = "http://localhost:5000/api/product";
-  const CATEGORY_API_URL = "http://localhost:5000/api/category";
-  const SUBCATEGORY_API_URL = "http://localhost:5000/api/sub-category";
+  const API_URL = `${GLOBAL_API_URL}/product`;
+  const CATEGORY_API_URL = `${GLOBAL_API_URL}/category`;
+  const SUBCATEGORY_API_URL = `${GLOBAL_API_URL}/sub-category`;
 
   // Fetch sellers list (Admin only)
   const fetchSellers = async () => {
     try {
       const token = savedUser?.tokens?.accessToken;
       if (!token) return;
-      const response = await axios.get("http://localhost:5000/api/admin/users", {
+      const response = await axios.get(`${GLOBAL_API_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });

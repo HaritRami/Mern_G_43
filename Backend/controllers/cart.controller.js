@@ -83,7 +83,9 @@ export const addToCart = async (req, res) => {
     console.error('Error in addToCart:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Error adding product to cart"
+      message: error.message || "Error adding product to cart",
+      data: null,
+      error: error.message
     });
   }
 };
@@ -128,6 +130,8 @@ export const getCart = async (req, res) => {
 
     // Calculate cart totals
     const cartTotals = cartItems.reduce((acc, item) => {
+      if (!item.productId) return acc; // Skip deleted products
+
       const price = item.productId.price * item.quantity;
       const discount = item.productId.discount ? (price * item.productId.discount) / 100 : 0;
       
@@ -155,7 +159,9 @@ export const getCart = async (req, res) => {
     console.error('Error in getCart:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Error fetching cart items"
+      message: error.message || "Error fetching cart items",
+      data: null,
+      error: error.message
     });
   }
 };
@@ -213,7 +219,9 @@ export const updateCartQuantity = async (req, res) => {
     console.error('Error in updateCartQuantity:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Error updating cart quantity"
+      message: error.message || "Error updating cart quantity",
+      data: null,
+      error: error.message
     });
   }
 };
@@ -242,7 +250,9 @@ export const removeFromCart = async (req, res) => {
     console.error('Error in removeFromCart:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Error removing item from cart"
+      message: error.message || "Error removing item from cart",
+      data: null,
+      error: error.message
     });
   }
 };
@@ -256,6 +266,8 @@ export const getCartSummary = async (req, res) => {
       .populate('productId');
 
     const summary = cartItems.reduce((acc, item) => {
+      if (!item.productId) return acc; // Skip deleted products
+
       const price = item.productId.price * item.quantity;
       const discount = item.productId.discount ? (price * item.productId.discount) / 100 : 0;
       
@@ -277,7 +289,40 @@ export const getCartSummary = async (req, res) => {
     console.error('Error in getCartSummary:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Error getting cart summary"
+      message: error.message || "Error getting cart summary",
+      data: null,
+      error: error.message
+    });
+  }
+};
+
+// Clear entire cart for a user
+export const clearCart = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Validate user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    await CartProductModel.deleteMany({ userId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart cleared successfully"
+    });
+  } catch (error) {
+    console.error('Error in clearCart:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Error clearing cart",
+      data: null,
+      error: error.message
     });
   }
 };

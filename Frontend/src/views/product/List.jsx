@@ -1,14 +1,15 @@
 import React, { lazy, Component } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { DOMAIN_URL } from "../../config/apiConfig";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const Breadcrumb = lazy(() => import("../../components/Breadcrumb"));
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = DOMAIN_URL;
 
-class ProductListView extends Component {
+class CategoryListView extends Component {
   state = {
     categories: [],
     view: "grid",
@@ -118,27 +119,25 @@ class ProductListView extends Component {
                 key={category._id}
                 className={view === "grid" ? "col-md-4" : "col-12"}
               >
-                <Link
-                  to={`/products/category/${this.toSlug(category.name)}`}
-                  state={{ categoryName: category.name }}   // ✅ Pass real name
-                  className="text-decoration-none"
-                >
-                  <div className="card h-100 shadow-sm hover-shadow">
-                    <div className="position-relative">
-                      <img
-                        src={
-                          category.image?.startsWith('http')
-                            ? category.image
-                            : `${BACKEND_URL}${category.image}`
-                        }
-                        className="card-img-top"
-                        alt={category.name}
-                        style={{ height: "200px", objectFit: "cover" }}
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/200';
-                        }}
-                      />
-                      <div className="position-absolute top-0 end-0 p-2">
+                  <Link
+                    to={`/products?category=${category._id}`}
+                    className="text-decoration-none"
+                  >
+                    <div className="card h-100 shadow-sm hover-shadow">
+                      <div className="position-relative bg-light border-bottom d-flex align-items-center justify-content-center" style={{ height: "200px" }}>
+                        <img
+                          src={
+                            category.image?.startsWith('http')
+                              ? category.image
+                              : `${BACKEND_URL}${category.image}`
+                          }
+                          className="w-100 h-100 object-fit-contain p-3"
+                          alt={category.name}
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/200';
+                          }}
+                        />
+                        <div className="position-absolute top-0 end-0 p-2">
                         <span className="badge bg-primary">
                           {category.barcodeId}
                         </span>
@@ -191,4 +190,4 @@ class ProductListView extends Component {
   }
 }
 
-export default ProductListView;
+export default CategoryListView;

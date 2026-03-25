@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -132,34 +133,89 @@ const CheckoutView = () => {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    address_line: '',
+    city: '',
+    state: '',
+    country: '',
+    mobile: ''
+  });
   const [formData, setFormData] = useState({
     email: '',
     mobile: '',
-    shippingName: '',
-    shippingAddress1: '',
-    shippingAddress2: '',
-    shippingCountry: '',
-    shippingState: '',
-    shippingZip: '',
-    sameAsBilling: true,
-    billingName: '',
-    billingAddress1: '',
-    billingAddress2: '',
-    billingCountry: '',
-    billingState: '',
-    billingZip: '',
-    paymentMethod: 'razorpay',
-    // card fields retained for future use but hidden
-    cardName: '',
-    cardNumber: '',
-    expirationMonth: '',
-    expirationYear: '',
-    cvv: ''
+    paymentMethod: 'razorpay'
   });
 
   useEffect(() => {
     fetchCartItems();
+    fetchAddresses();
+    
+    // Auto-fill user identity securely
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (savedUser) {
+      if (!savedUser.mobile) {
+        toast.error("Please add a mobile number in your profile before checking out.");
+        navigate('/account/profile');
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          email: savedUser.email || '',
+          mobile: savedUser.mobile || ''
+        }));
+      }
+    } else {
+      toast.error('Session expired. Please login again');
+      navigate('/account/signin');
+    }
   }, []);
+
+  const fetchAddresses = async () => {
+    try {
+      const authConfig = getAuthConfig();
+      if (!authConfig) return;
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      const response = await axios.get(`${GLOBAL_API_URL}/address/user/${savedUser.id}`, authConfig);
+      if (response.data.success) {
+        setAddresses(response.data.data);
+        if (response.data.data.length === 0) {
+          setShowAddressForm(true);
+        } else {
+          const defaultAddr = response.data.data.find(a => a.isDefault);
+          setSelectedAddressId(defaultAddr ? defaultAddr._id : response.data.data[0]._id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+    }
+  };
+
+  const handleAddNewAddress = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const authConfig = getAuthConfig();
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      const response = await axios.post(`${GLOBAL_API_URL}/address`, {
+        ...newAddress, user: savedUser.id
+      }, authConfig);
+      if (response.data.success) {
+        toast.success('Address added successfully!');
+        setNewAddress({ address_line: '', city: '', state: '', country: '', mobile: '' });
+        setShowAddressForm(false);
+        fetchAddresses();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error adding address');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getAuthConfig = () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -184,7 +240,7 @@ const CheckoutView = () => {
       const userId = savedUser.id;
 
       const response = await axios.get(
-        `http://localhost:5000/api/cart/${userId}/cart`,
+        `${GLOBAL_API_URL}/cart/${userId}/cart`,
         authConfig
       );
 
@@ -229,6 +285,48 @@ const CheckoutView = () => {
     }
   };
 
+  const applyCoupon = async () => {
+    if (!couponCodeInput) return;
+    setLoading(true);
+    try {
+      const authConfig = getAuthConfig();
+      const res = await axios.post(`${GLOBAL_API_URL}/coupon/validate`, {
+        code: couponCodeInput,
+        cartTotal: totalPrice
+      }, authConfig);
+      
+      if (res.data.success) {
+        setAppliedCouponCode(res.data.data.code);
+        setCouponDiscount(res.data.data.discountAmount);
+        toast.success(res.data.message || 'Coupon applied!');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Invalid coupon');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCouponCode('');
+    setCouponDiscount(0);
+    setCouponCodeInput('');
+    toast.info('Coupon removed');
+  };
+
+  const axiosRetry = async (url, payload, config, retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+        try {
+            return await axios.post(url, payload, config);
+        } catch (error) {
+            if (i === retries) throw error;
+            console.warn(`Retrying API call to ${url} (${i + 1}/${retries})...`);
+            // wait 1000ms before retrying
+            await new Promise(res => setTimeout(res, 1000));
+        }
+    }
+  };
+
   const handleRazorpay = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -237,9 +335,9 @@ const CheckoutView = () => {
       const authConfig = getAuthConfig();
       if (!authConfig) return;
 
-      const amount = totalPrice - discount;
+      const amount = totalPrice - (discount + couponDiscount);
 
-      const { data } = await axios.post("http://localhost:5000/api/payment/razor/create-order", {
+      const { data } = await axios.post(`${GLOBAL_API_URL}/payment/razor/create-order`, {
         amount
       }, authConfig);
 
@@ -252,26 +350,38 @@ const CheckoutView = () => {
         order_id: data.order.id,
         handler: async function (response) {
           toast.success("Payment Successful!");
-          // create order record on server
+          setLoading(true);
           try {
             const savedUser = JSON.parse(localStorage.getItem("user"));
-            const orderPayload = {
-              userId: [savedUser.id],
-              orderId: "order_" + Date.now(),
+            const addr = addresses.find(a => a._id === selectedAddressId);
+            const deliveryAddress = {
+              address_line: addr.address_line,
+              city: addr.city,
+              state: addr.state,
+              country: addr.country,
+              mobile: addr.mobile
+            };
+
+            const checkoutPayload = {
+              cartItems,
               paymentId: response.razorpay_payment_id,
               paymentStatus: "PAID",
-              deliveryAddress: {
-                address_line: formData.shippingAddress1 + (formData.shippingAddress2 ? ", " + formData.shippingAddress2 : ""),
-                city: formData.shippingState,
-                state: formData.shippingState,
-                country: formData.shippingCountry,
-                mobile: formData.mobile
-              },
+              deliveryAddress,
               subTotalAmt: totalPrice,
-              totalAmt: totalPrice - discount,
+              totalAmt: amount,
+              discount: discount + couponDiscount,
+              couponCode: appliedCouponCode,
+              email: formData.email,
+              mobile: formData.mobile
             };
-            const resp = await axios.post("http://localhost:5000/api/order", orderPayload, authConfig);
-            localStorage.setItem('lastOrder', JSON.stringify(resp.data.newOrder));
+
+            const resData = await axiosRetry(`${GLOBAL_API_URL}/order/checkout`, checkoutPayload, authConfig);
+            
+            if (!resData.data.success) {
+               throw new Error(resData.data.message || "Failed to process checkout");
+            }
+
+            setCartItems([]);
             // show Swal and then redirect
             await Swal.fire({
               icon: 'success',
@@ -280,9 +390,13 @@ const CheckoutView = () => {
               timer: 2000,
               showConfirmButton: false
             });
-            navigate(`/track/${resp.data.newOrder._id}`);
+            const masterOrder = resData.data.data.orders[0];
+            navigate(`/track/${masterOrder?._id}`);
           } catch (err) {
             console.error('Error saving order', err);
+            toast.error(err.response?.data?.message || err.message || "Error confirming order on server");
+          } finally {
+            setLoading(false);
           }
         },
         prefill: {
@@ -300,8 +414,7 @@ const CheckoutView = () => {
         JSON.stringify(error.response?.data) ||
         "Payment Failed"
       );
-    } finally {
-      setLoading(false);
+      setLoading(false); // only disable loader if failing before Razorpay opens
     }
   };
 
@@ -312,22 +425,34 @@ const CheckoutView = () => {
       const authConfig = getAuthConfig();
       if (!authConfig) return;
       const savedUser = JSON.parse(localStorage.getItem("user"));
-      const orderPayload = {
-        userId: [savedUser.id],
-        orderId: "order_" + Date.now(),
-        paymentStatus: "COD",
-        deliveryAddress: {
-          address_line: formData.shippingAddress1 + (formData.shippingAddress2 ? ", " + formData.shippingAddress2 : ""),
-          city: formData.shippingState,
-          state: formData.shippingState,
-          country: formData.shippingCountry,
-          mobile: formData.mobile
-        },
-        subTotalAmt: totalPrice,
-        totalAmt: totalPrice - discount,
+      const addr = addresses.find(a => a._id === selectedAddressId);
+      const deliveryAddress = {
+        address_line: addr.address_line,
+        city: addr.city,
+        state: addr.state,
+        country: addr.country,
+        mobile: addr.mobile
       };
-      const resp = await axios.post("http://localhost:5000/api/order", orderPayload, authConfig);
-      localStorage.setItem('lastOrder', JSON.stringify(resp.data.newOrder));
+
+      const checkoutPayload = {
+        cartItems,
+        paymentStatus: "COD",
+        deliveryAddress,
+        subTotalAmt: totalPrice,
+        totalAmt: totalPrice - (discount + couponDiscount),
+        discount: discount + couponDiscount,
+        couponCode: appliedCouponCode,
+        email: formData.email,
+        mobile: formData.mobile
+      };
+
+      const resData = await axiosRetry(`${GLOBAL_API_URL}/order/checkout`, checkoutPayload, authConfig);
+      
+      if (!resData.data.success) {
+         throw new Error(resData.data.message || "Failed to place order");
+      }
+
+      setCartItems([]);
       // show Swal then redirect
       await Swal.fire({
         icon: 'success',
@@ -336,13 +461,14 @@ const CheckoutView = () => {
         timer: 2000,
         showConfirmButton: false
       });
-      navigate(`/track/${resp.data.newOrder._id}`);
+      const masterOrder = resData.data.data.orders[0];
+      navigate(`/track/${masterOrder?._id}`);
 
     } catch (error) {
       console.error('COD order error', error.response || error);
       toast.error(
         error.response?.data?.message ||
-        JSON.stringify(error.response?.data) ||
+        error.message ||
         "Failed to place order"
       );
     } finally {
@@ -351,6 +477,15 @@ const CheckoutView = () => {
   };
 
   const handleSubmit = (e) => {
+    e.preventDefault();
+    if (cartItems.length === 0) {
+      toast.error('Your cart is empty. Please add items to proceed.');
+      return;
+    }
+    if (!selectedAddressId) {
+      toast.error('Please select or add a delivery address first.');
+      return;
+    }
     if (formData.paymentMethod === 'cod') {
       handleCod(e);
     } else {
@@ -395,25 +530,25 @@ const CheckoutView = () => {
                 <div className="card-body">
                   <div className="row g-3">
                     <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">Authenticated Email</label>
                       <input
                         type="email"
-                        className="form-control"
+                        className="form-control bg-light"
                         name="email"
                         value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="Email Address"
-                        required
+                        readOnly
+                        disabled
                       />
                     </div>
                     <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">Authenticated Mobile</label>
                       <input
                         type="tel"
-                        className="form-control"
+                        className="form-control bg-light"
                         name="mobile"
                         value={formData.mobile}
-                        onChange={handleInputChange}
-                        placeholder="Mobile Number"
-                        required
+                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
@@ -422,182 +557,65 @@ const CheckoutView = () => {
 
               {/* Shipping Information */}
               <div className="card form-card">
-                <div className="card-header">
-                  <i className="bi bi-truck"></i> Shipping Information
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <div><i className="bi bi-truck"></i> Delivery Address</div>
+                  {!showAddressForm && (
+                     <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowAddressForm(true)}>
+                       + Add New Address
+                     </button>
+                  )}
                 </div>
                 <div className="card-body">
-                  <div className="row g-3">
-                    <div className="col-12">
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="shippingName"
-                        value={formData.shippingName}
-                        onChange={handleInputChange}
-                        placeholder="Full Name"
-                        required
-                      />
+                  {showAddressForm ? (
+                    <div className="bg-light p-3 rounded border">
+                      <h5 className="mb-3">Add New Address</h5>
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <input type="text" className="form-control" placeholder="Address Line" value={newAddress.address_line} onChange={(e) => setNewAddress({...newAddress, address_line: e.target.value})} />
+                        </div>
+                        <div className="col-md-6">
+                          <input type="text" className="form-control" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})} />
+                        </div>
+                        <div className="col-md-6">
+                          <input type="text" className="form-control" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})} />
+                        </div>
+                        <div className="col-md-6">
+                          <input type="text" className="form-control" placeholder="Country" value={newAddress.country} onChange={(e) => setNewAddress({...newAddress, country: e.target.value})} />
+                        </div>
+                        <div className="col-md-6">
+                          <input type="tel" className="form-control" placeholder="Mobile" value={newAddress.mobile} onChange={(e) => setNewAddress({...newAddress, mobile: e.target.value})} />
+                        </div>
+                        <div className="col-12 mt-3">
+                          <button type="button" className="btn btn-primary me-2" onClick={handleAddNewAddress} disabled={!newAddress.address_line || !newAddress.city || !newAddress.state || !newAddress.country || !newAddress.mobile}>Save Address</button>
+                          {addresses.length > 0 && (
+                            <button type="button" className="btn btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="col-md-6">
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="shippingAddress1"
-                        value={formData.shippingAddress1}
-                        onChange={handleInputChange}
-                        placeholder="Address Line 1"
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="shippingAddress2"
-                        value={formData.shippingAddress2}
-                        onChange={handleInputChange}
-                        placeholder="Address Line 2 (Optional)"
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <select 
-                        className="form-select"
-                        name="shippingCountry"
-                        value={formData.shippingCountry}
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Select Country</option>
-                        <option value="US">United States</option>
-                        <option value="CA">Canada</option>
-                        <option value="UK">United Kingdom</option>
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <select 
-                        className="form-select"
-                        name="shippingState"
-                        value={formData.shippingState}
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Select State</option>
-                        <option value="CA">California</option>
-                        <option value="NY">New York</option>
-                        <option value="TX">Texas</option>
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="shippingZip"
-                        value={formData.shippingZip}
-                        onChange={handleInputChange}
-                        placeholder="ZIP Code"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Billing Information */}
-              {/* <div className="card form-card">
-                <div className="card-header d-flex align-items-center">
-                  <i className="bi bi-receipt"></i> Billing Information
-                  <div className="form-check ms-3">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      name="sameAsBilling"
-                      checked={formData.sameAsBilling}
-                      onChange={handleInputChange}
-                      id="sameAsBilling"
-                    />
-                    <label className="form-check-label" htmlFor="sameAsBilling">
-                      Same as Shipping Information
-                    </label>
-                  </div>
-                </div>
-                <div className="card-body">
-                  {!formData.sameAsBilling && (
+                  ) : (
                     <div className="row g-3">
-                      <div className="col-12">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="billingName"
-                          value={formData.billingName}
-                          onChange={handleInputChange}
-                          placeholder="Full Name"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="billingAddress1"
-                          value={formData.billingAddress1}
-                          onChange={handleInputChange}
-                          placeholder="Address Line 1"
-                          required
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="billingAddress2"
-                          value={formData.billingAddress2}
-                          onChange={handleInputChange}
-                          placeholder="Address Line 2 (Optional)"
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <select 
-                          className="form-select"
-                          name="billingCountry"
-                          value={formData.billingCountry}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="">Select Country</option>
-                          <option value="US">United States</option>
-                          <option value="CA">Canada</option>
-                          <option value="UK">United Kingdom</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <select 
-                          className="form-select"
-                          name="billingState"
-                          value={formData.billingState}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="">Select State</option>
-                          <option value="CA">California</option>
-                          <option value="NY">New York</option>
-                          <option value="TX">Texas</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="billingZip"
-                          value={formData.billingZip}
-                          onChange={handleInputChange}
-                          placeholder="ZIP Code"
-                          required
-                        />
-                      </div>
+                      {addresses.map(addr => (
+                        <div key={addr._id} className="col-12">
+                          <div className={`p-3 border rounded ${selectedAddressId === addr._id ? 'border-primary bg-primary bg-opacity-10' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setSelectedAddressId(addr._id)}>
+                            <div className="form-check">
+                              <input type="radio" className="form-check-input" checked={selectedAddressId === addr._id} readOnly />
+                              <label className="form-check-label w-100">
+                                <div className="d-flex justify-content-between">
+                                  <strong>{addr.address_line}</strong>
+                                  {addr.isDefault && <span className="badge bg-success">Default</span>}
+                                </div>
+                                <div>{addr.city}, {addr.state}, {addr.country}</div>
+                                <div><i className="bi bi-telephone"></i> {addr.mobile}</div>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div> */}
+              </div>
 
               {/* Payment Information */}
               <div className="card form-card payment-card">
@@ -678,13 +696,13 @@ const CheckoutView = () => {
                       <div key={item._id} className="list-group-item">
                         <div className="d-flex justify-content-between align-items-center">
                           <div>
-                            <h6 className="my-0">{item.productId.name}</h6>
+                            <h6 className="my-0">{item?.productId?.name || 'Unknown Product'}</h6>
                             <small className="text-muted">
-                              Quantity: {item.quantity}
+                              Quantity: {item?.quantity || 1}
                             </small>
                           </div>
                           <span className="text-muted">
-                            ${(item.productId.price * item.quantity).toFixed(2)}
+                            ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -696,6 +714,26 @@ const CheckoutView = () => {
                         <span>${totalPrice.toFixed(2)}</span>
                       </div>
                     </div>
+
+                    <div className="list-group-item p-3 bg-light">
+                      <div className="input-group">
+                        <input type="text" className="form-control" placeholder="Enter Coupon Code" value={couponCodeInput} onChange={(e) => setCouponCodeInput(e.target.value)} disabled={appliedCouponCode} />
+                        {appliedCouponCode ? (
+                          <button className="btn btn-outline-danger" type="button" onClick={removeCoupon}>Remove</button>
+                        ) : (
+                          <button className="btn btn-primary" type="button" onClick={applyCoupon} disabled={!couponCodeInput || loading}>Apply</button>
+                        )}
+                      </div>
+                    </div>
+
+                    {couponDiscount > 0 && (
+                      <div className="list-group-item">
+                        <div className="d-flex justify-content-between text-success">
+                          <span>Coupon Discount ({appliedCouponCode})</span>
+                          <span>-${couponDiscount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
 
                     {discount > 0 && (
                       <div className="list-group-item">
@@ -716,19 +754,25 @@ const CheckoutView = () => {
                     <div className="list-group-item">
                       <div className="d-flex justify-content-between">
                         <strong>Total</strong>
-                        <strong>${(totalPrice - discount).toFixed(2)}</strong>
+                        <strong>${(totalPrice - (discount + couponDiscount)).toFixed(2)}</strong>
                       </div>
                     </div>
                   </div>
                 </div>
-                {formData.paymentMethod === 'cod' && (
+                {formData.paymentMethod === 'cod' && selectedAddressId && addresses.find(a => a._id === selectedAddressId) && (
                   <div className="card mb-4 alert alert-info">
                     <strong>Review address:</strong>
-                    <p className="mb-1">{formData.shippingName}</p>
-                    <p className="mb-1">{formData.shippingAddress1}{formData.shippingAddress2 && ", " + formData.shippingAddress2}</p>
-                    <p className="mb-1">{formData.shippingState}, {formData.shippingCountry}, {formData.shippingZip}</p>
-                    <p className="mb-0">{formData.mobile}</p>
-                    <small className="text-muted">We will deliver to this address and you will be charged on delivery.</small>
+                    {(() => {
+                      const addr = addresses.find(a => a._id === selectedAddressId);
+                      return (
+                        <>
+                          <p className="mb-1">{addr.address_line}</p>
+                          <p className="mb-1">{addr.city}, {addr.state}, {addr.country}</p>
+                          <p className="mb-0">Tel: {addr.mobile}</p>
+                        </>
+                      );
+                    })()}
+                    <small className="text-muted mt-2 d-block">We will deliver to this address and you will be charged on delivery.</small>
                   </div>
                 )}
 
@@ -745,7 +789,7 @@ const CheckoutView = () => {
                       </>
                     ) : (
                       <>
-                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay $${(totalPrice - discount).toFixed(2)}`}
+                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay $${(totalPrice - (discount + couponDiscount)).toFixed(2)}`}
                       </>
                     )}
                   </button>

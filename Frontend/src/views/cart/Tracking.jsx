@@ -1,80 +1,233 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const trackingStyles = `
-  .tracking-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem 0;
-    text-align: center;
-    color: white;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 2rem;
+  :root {
+    --track-primary: #667eea;
+    --track-secondary: #764ba2;
+    --track-success: #38b2ac;
+    --track-bg: #f8f9fa;
+    --track-text: #2d3748;
+    --track-muted: #a0aec0;
+    --track-border: #e2e8f0;
   }
-  .track-card {
-    max-width: 700px;
-    margin: 0 auto;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+
+  .tracking-container {
+    background: var(--track-bg);
+    min-height: calc(100vh - 80px);
+    padding: 2rem 1rem;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Animations */
+  @keyframes fadeSlideUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  @keyframes fillLineHorizontal {
+    0% { width: 0; }
+    100% { width: 100%; }
+  }
+  
+  @keyframes fillLineVertical {
+    0% { height: 0; }
+    100% { height: 100%; }
+  }
+
+  .animate-stagger {
+    opacity: 0;
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(90deg, #f6f7f8 0px, #edeef1 40px, #f6f7f8 80px);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear forwards;
+    border-radius: 4px;
+    opacity: 0.7;
+  }
+
+  /* Cards */
+  .premium-card {
     background: #fff;
-  }
-  .track-card h2 {
-    color: #2d3748;
-  }
-  .delivery-msg {
-    background: #e6fffa;
-    border-left: 4px solid #38b2ac;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 2rem;
     margin-bottom: 1.5rem;
-    color: #2c7a7b;
-    font-weight: 500;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
-  .steps {
-    list-style: none;
-    padding: 0;
+  
+  .premium-card:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    transform: translateY(-2px);
   }
-  .steps li {
+
+  /* Stepper UI */
+  .stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
     position: relative;
-    padding-left: 3rem;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
+    margin: 3rem 0;
   }
-  .steps li::before {
-    content: "";
+
+  .stepper-bg-line {
     position: absolute;
-    left: 0;
-    top: 0.1rem;
-    width: 1.5rem;
-    height: 1.5rem;
+    top: 24px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: var(--track-border);
+    z-index: 1;
+  }
+
+  .stepper-fill-line {
+    position: absolute;
+    top: 24px;
+    left: 10%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--track-primary), var(--track-success));
+    z-index: 2;
+    animation: fillLineHorizontal 1s ease-out forwards;
+    transform-origin: left;
+  }
+
+  .stepper-item {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20%;
+    opacity: 0;
+    animation: fadeSlideUp 0.5s ease forwards;
+  }
+
+  .stepper-circle {
+    width: 50px;
+    height: 50px;
+    background: #fff;
+    border: 3px solid var(--track-border);
     border-radius: 50%;
-    background: #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    color: #4a5568;
+    font-size: 1.2rem;
+    color: var(--track-muted);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 4;
   }
-  .steps li.completed::before {
-    background: #667eea;
+
+  .stepper-item.completed .stepper-circle {
+    border-color: var(--track-success);
+    background: var(--track-success);
     color: white;
   }
-  .steps li::after {
-    content: "";
-    position: absolute;
-    left: 0.7rem;
-    top: 1.8rem;
-    width: 0.2rem;
-    height: calc(100% - 1.8rem);
-    background: #e2e8f0;
+
+  .stepper-item.active .stepper-circle {
+    border-color: var(--track-primary);
+    color: var(--track-primary);
+    animation: pulseGlow 2s infinite;
   }
-  .steps li:last-child::after {
-    display: none;
+
+  .stepper-label {
+    margin-top: 1rem;
+    font-weight: 600;
+    color: var(--track-text);
+    text-align: center;
+    font-size: 0.9rem;
   }
-  .steps li.completed::after {
-    background: #667eea;
+
+  .stepper-date {
+    font-size: 0.75rem;
+    color: var(--track-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* Responsive Timeline */
+  @media (max-width: 768px) {
+    .stepper-wrapper {
+      flex-direction: column;
+      align-items: flex-start;
+      margin: 2rem 0;
+      padding-left: 2rem;
+    }
+
+    .stepper-bg-line {
+      top: 5%;
+      bottom: 5%;
+      left: 20px;
+      width: 3px;
+      height: auto;
+      right: auto;
+    }
+
+    .stepper-fill-line {
+      top: 5%;
+      left: 20px;
+      width: 3px;
+      animation: fillLineVertical 1s ease-out forwards;
+      transform-origin: top;
+    }
+
+    .stepper-item {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .stepper-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .stepper-circle {
+      width: 40px;
+      height: 40px;
+      position: absolute;
+      left: -20px;
+    }
+
+    .stepper-label-wrapper {
+      margin-left: 2rem;
+      text-align: left;
+    }
+    
+    .stepper-label {
+      margin-top: 0;
+      text-align: left;
+    }
+  }
+
+  /* Product Map */
+  .product-img-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+  }
+  
+  .product-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 `;
 
@@ -83,93 +236,269 @@ const Tracking = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const savedUser = JSON.parse(localStorage.getItem('user'));
-        if (!savedUser || !savedUser.tokens?.accessToken) {
-          toast.error('Please login to view tracking');
-          navigate('/account/signin');
-          return;
-        }
-        const authConfig = {
-          headers: { Authorization: `Bearer ${savedUser.tokens.accessToken}` }
-        };
-        const resp = await axios.get(`http://localhost:5000/api/order/${id}`, authConfig);
-        setOrder(resp.data);
-      } catch (err) {
-        console.error(err);
-        toast.error('Unable to fetch order details');
-        navigate('/');
-      } finally {
-        setLoading(false);
+  const fetchOrder = async (retries = 2) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      if (!savedUser || !savedUser.tokens?.accessToken) {
+        toast.error('Please log in securely to access tracking.');
+        navigate('/account/signin');
+        return;
       }
-    };
-    fetchOrder();
-  }, [id, navigate]);
+      const authConfig = { headers: { Authorization: `Bearer ${savedUser.tokens.accessToken}` } };
 
-  const computeSteps = () => {
-    if (!order) return [];
-    const steps = [
-      { label: 'Order Placed', done: true, icon: '✔' },
-      { label: 'Processing', done: true, icon: '✔' },
-      { label: 'Shipped', done: false, icon: '📦' },
-      { label: 'Out for Delivery', done: false, icon: '🚚' },
-      { label: 'Delivered', done: false, icon: '🏁' }
-    ];
-
-    const now = new Date();
-    const trackingDate = order.trackingDate ? new Date(order.trackingDate) : null;
-    if (trackingDate && now >= trackingDate) {
-      steps[2].done = true;
-      steps[2].icon = '✔';
+      let resp;
+      for (let i = 0; i <= retries; i++) {
+        try {
+          resp = await axios.get(`${GLOBAL_API_URL}/order/${id}`, authConfig);
+          break;
+        } catch (err) {
+          if (i === retries) throw err;
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      setOrder(resp.data);
+    } catch (err) {
+      console.error("Fetch tracking error:", err);
+      setError("Unable to locate your order right now. It may have been relocated or network failed.");
+    } finally {
+      // Add slight synthetic delay to allow skeleton rendering to be visible to build trust visually
+      setTimeout(() => setLoading(false), 600);
     }
-    // assume each subsequent step is 1 day apart for demo
-    if (trackingDate && now >= new Date(trackingDate.getTime() + 1*24*60*60*1000)) {
-      steps[3].done = true;
-      steps[3].icon = '✔';
-    }
-    if (trackingDate && now >= new Date(trackingDate.getTime() + 2*24*60*60*1000)) {
-      steps[4].done = true;
-      steps[4].icon = '✔';
-    }
-    return steps;
   };
 
-  if (loading) {
-    return <div className="text-center mt-5">Loading tracking information...</div>;
-  }
+  useEffect(() => {
+    fetchOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, navigate]);
 
-  if (!order) return null;
+  // Loading Skeleton Component
+  const TrackingSkeleton = () => (
+    <div className="container tracking-container">
+      <div className="premium-card skeleton" style={{ height: '60px', marginBottom: '2rem' }}></div>
+      <div className="premium-card skeleton" style={{ height: '300px' }}></div>
+      <div className="premium-card skeleton" style={{ height: '200px' }}></div>
+    </div>
+  );
 
-  const steps = computeSteps();
-  const trackingDate = order.trackingDate ? new Date(order.trackingDate) : null;
-  const deliveryDate = trackingDate ? new Date(trackingDate.getTime() + 3*24*60*60*1000) : null;
-  const deliveryMsg = deliveryDate
-    ? `Your order will be delivered on ${deliveryDate.toLocaleDateString()}`
-    : '';
+  // Error State Layout
+  const TrackingError = () => (
+    <div className="container tracking-container d-flex justify-content-center align-items-center">
+      <div className="premium-card text-center animate-stagger" style={{ maxWidth: "500px", width: "100%" }}>
+        <i className="bi bi-shield-x text-danger mb-3" style={{ fontSize: "4rem" }}></i>
+        <h3 className="fw-bold text-dark">Tracking Unavailable</h3>
+        <p className="text-muted">{error}</p>
+        <button className="btn btn-primary fw-bold px-4 py-2 mt-3 shadow-sm rounded-pill" onClick={() => fetchOrder()}>
+          <i className="bi bi-arrow-clockwise me-2"></i>Retry Connection
+        </button>
+      </div>
+    </div>
+  );
+
+  // Empty State Layout
+  const TrackingEmpty = () => (
+    <div className="container tracking-container d-flex justify-content-center align-items-center">
+      <div className="premium-card text-center animate-stagger" style={{ maxWidth: "500px", width: "100%" }}>
+        <i className="bi bi-search text-secondary mb-3" style={{ fontSize: "4rem" }}></i>
+        <h3 className="fw-bold text-dark">Order Not Found</h3>
+        <p className="text-muted">We couldn't track this ID. Ensure the link is correct or you are logged into the right account.</p>
+        <Link to="/" className="btn btn-primary fw-bold px-4 py-2 mt-3 shadow-sm rounded-pill">
+          Go To Home
+        </Link>
+      </div>
+    </div>
+  );
+
+  if (loading) return <> <style>{trackingStyles}</style> <TrackingSkeleton /> </>;
+  if (error) return <> <style>{trackingStyles}</style> <TrackingError /> </>;
+  if (!order) return <> <style>{trackingStyles}</style> <TrackingEmpty /> </>;
+
+  // Compute logic safely
+  const trackingDate = order?.trackingDate ? new Date(order.trackingDate) : null;
+  const now = new Date();
+
+  // Create Step Objects
+  const steps = [
+    { label: 'Order Placed', icon: 'bi-cart-check-fill', iconEmpty: 'bi-cart' },
+    { label: 'Processing', icon: 'bi-box-seam-fill', iconEmpty: 'bi-box-seam' },
+    { label: 'Shipped', icon: 'bi-truck', iconEmpty: 'bi-truck' },
+    { label: 'Out for Delivery', icon: 'bi-signpost-fill', iconEmpty: 'bi-signpost' },
+    { label: 'Delivered', icon: 'bi-house-heart-fill', iconEmpty: 'bi-house' }
+  ];
+
+  // Logic mapping against dates
+  const determineStepStatus = () => {
+    let completedCount = 0;
+    
+    if (order?.paymentStatus !== 'Failed' && order?.paymentStatus !== 'Cancelled') {
+      completedCount = 1; // Placed
+      steps[0].dateStr = new Date(order.createdAt).toLocaleDateString();
+    }
+    
+    if (order?.paymentStatus === 'Completed' || order?.paymentStatus === 'COD' || order?.paymentStatus === 'Paid') {
+      completedCount = 2; // Processing
+    }
+
+    if (trackingDate && now >= trackingDate) {
+      completedCount = 3; // Shipped
+      steps[2].dateStr = trackingDate.toLocaleDateString();
+    }
+
+    if (trackingDate && now >= new Date(trackingDate.getTime() + 1*24*60*60*1000)) {
+      completedCount = 4; // Out for Delivery
+    }
+
+    if (trackingDate && now >= new Date(trackingDate.getTime() + 2*24*60*60*1000)) {
+        completedCount = 5; // Delivered
+        steps[4].dateStr = new Date(trackingDate.getTime() + 2*24*60*60*1000).toLocaleDateString();
+    }
+
+    return completedCount;
+  };
+
+  const completedCount = determineStepStatus();
+  // Fill length percentage for desktop mode
+  const fillPercentage = completedCount <= 1 ? 0 : ((completedCount - 1) / (steps.length - 1)) * 100;
+
+  // Destructure with fallbacks
+  const productDetail = order?.productDetail || {};
+  const productImages = productDetail?.images || [];
+  const displayImage = productImages.length > 0 
+                        ? (productImages[0].startsWith('http') ? productImages[0] : `${GLOBAL_DOMAIN_URL}${productImages[0]}`) 
+                        : 'https://via.placeholder.com/80?text=No+Img';
 
   return (
-    <>
+    <div className="tracking-container">
       <style>{trackingStyles}</style>
-      <div className="tracking-header">
-        <h1>Track Your Order</h1>
+
+      {/* Header section (fades in quickly) */}
+      <div className="container animate-stagger" style={{ animationDelay: '0.1s' }}>
+        <div className="d-flex justify-content-between align-items-center mb-4 px-2">
+            <div>
+                <h4 className="fw-bold mb-1" style={{color: 'var(--track-text)'}}>Track Your Shipment</h4>
+                <p className="text-muted mb-0">ID: <span className="fw-semibold text-dark">{order?.orderId || "Unknown"}</span></p>
+            </div>
+            {order?.orderId?.startsWith('ORD-') && (
+               <a 
+                 href={`${GLOBAL_API_URL}/order/invoice/invoice_${order.orderId.split('-').slice(0, 2).join('-')}.pdf`} 
+                 target="_blank" 
+                 rel="noreferrer" 
+                 className="btn btn-outline-primary rounded-pill fw-bold"
+               >
+                 <i className="bi bi-receipt me-2"></i>Invoice
+               </a>
+            )}
+        </div>
       </div>
-      <div className="track-card">
-        <h2>Order #{order.orderId}</h2>
-        <p>Status: {order.paymentStatus}</p>
-        {deliveryMsg && <div className="delivery-msg">{deliveryMsg}</div>}
-        <ul className="steps">
-          {steps.map((s, idx) => (
-            <li key={idx} className={s.done ? 'completed' : ''}>
-              <span className="step-icon">{s.icon}</span> {s.label}
-            </li>
-          ))}
-        </ul>
-        <a href="/" className="btn btn-primary">Back to Home</a>
+
+      {/* Stepper Timeline Card */}
+      <div className="container animate-stagger" style={{ animationDelay: '0.2s' }}>
+        <div className="premium-card">
+          <h5 className="fw-bold mb-1">Status: <span className="text-primary">{steps[Math.min(completedCount === 0 ? 0 : completedCount - 1, 4)]?.label}</span></h5>
+          <p className="text-muted small mb-0">
+             {completedCount >= 5 ? 'Your package has arrived safely!' : 'Your package is making its way to you.'}
+          </p>
+          
+          <div className="stepper-wrapper">
+             <div className="stepper-bg-line"></div>
+             <div className="stepper-fill-line" style={{ '--fill-target': `${fillPercentage}%` }}>
+                 <style>{`
+                    @keyframes fillLineHorizontal { 0% { width: 0; } 100% { width: ${fillPercentage}%; } }
+                    @keyframes fillLineVertical { 0% { height: 0; } 100% { height: ${fillPercentage}%; } }
+                 `}</style>
+             </div>
+
+             {steps.map((step, idx) => {
+                 const isCompleted = idx < completedCount;
+                 const isActive = idx === (completedCount === 0 ? 0 : completedCount - 1);
+                 
+                 let itemClass = "stepper-item";
+                 if (isCompleted && !isActive) itemClass += " completed";
+                 if (isActive) itemClass += " active completed";
+
+                 return (
+                     <div key={idx} className={itemClass} style={{ animationDelay: `${0.3 + (idx * 0.15)}s` }}>
+                         <div className="stepper-circle shadow-sm">
+                             <i className={`bi ${isCompleted ? step.icon : step.iconEmpty}`}></i>
+                         </div>
+                         <div className="stepper-label-wrapper">
+                             <div className="stepper-label">{step.label}</div>
+                             {step.dateStr && <div className="stepper-date d-none d-md-block text-center">{step.dateStr}</div>}
+                             {step.dateStr && <div className="stepper-date d-md-none text-start">{step.dateStr}</div>}
+                         </div>
+                     </div>
+                 )
+             })}
+          </div>
+        </div>
       </div>
-    </>
+
+      <div className="container">
+          <div className="row">
+              {/* Product Info Card */}
+              <div className="col-lg-7 animate-stagger" style={{ animationDelay: '0.6s' }}>
+                  <div className="premium-card h-100">
+                      <h5 className="fw-bold mb-4 border-bottom pb-2">Item Details</h5>
+                      
+                      <div className="d-flex align-items-center mb-3">
+                          <div className="product-img-wrap me-3 border shadow-sm">
+                               <img 
+                                src={displayImage} 
+                                alt={productDetail?.name || 'Product'} 
+                                onError={(e) => { e.target.src = 'https://via.placeholder.com/80?text=No+Img'; }}
+                               />
+                          </div>
+                          <div className="flex-grow-1">
+                              <h6 className="fw-bold text-dark mb-1">{productDetail?.name || 'Product No Longer Available'}</h6>
+                              <div className="text-muted small mb-2">Quantity: <span className="fw-bold text-dark">{order?.quantity || 1}</span></div>
+                              <h5 className="fw-bold text-success mb-0">₹{order?.totalAmt || order?.subTotalAmt || '0.00'}</h5>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Order Settings Card */}
+              <div className="col-lg-5 animate-stagger mt-3 mt-lg-0" style={{ animationDelay: '0.7s' }}>
+                  <div className="premium-card h-100 bg-light">
+                      <h5 className="fw-bold mb-4 border-bottom pb-2">Order Summary</h5>
+                      
+                      <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Payment Status</span>
+                          <span className={`fw-bold ${order?.paymentStatus === 'Completed' || order?.paymentStatus === 'COD' || order?.paymentStatus === 'Paid' ? 'text-success' : 'text-warning'}`}>
+                              {order?.paymentStatus || 'Pending'}
+                          </span>
+                      </div>
+                      <div className="d-flex justify-content-between mb-2">
+                          <span className="text-muted">Order Date</span>
+                          <span className="fw-bold text-dark">{new Date(order?.createdAt || Date.now()).toLocaleDateString()}</span>
+                      </div>
+                      
+                      {/* Only render Address Block if exists structurally safely */}
+                      {order?.deliveryAddress && (
+                          <div className="mt-4 pt-3 border-top">
+                              <h6 className="fw-bold text-dark mb-2">Shipping To</h6>
+                              <div className="small text-muted">
+                                  <div className="mb-1"><i className="bi bi-geo-alt-fill me-2"></i>{order.deliveryAddress.address_line || 'No address provided'}</div>
+                                  <div><i className="bi bi-telephone-fill me-2"></i>{order.deliveryAddress.mobile || 'No contact provided'}</div>
+                              </div>
+                          </div>
+                      )}
+
+                  </div>
+              </div>
+          </div>
+          
+          {/* Back Action */}
+          <div className="mt-4 animate-stagger" style={{ animationDelay: '0.9s' }}>
+              <Link to="/account/orders" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
+                  <i className="bi bi-arrow-left me-2"></i> Back to Orders
+              </Link>
+          </div>
+      </div>
+    </div>
   );
 };
 

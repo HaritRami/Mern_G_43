@@ -9,6 +9,7 @@ const navItems = [
     { to: "/admin/users", icon: "bi-people", label: "Users" },
     { to: "/admin/sellers", icon: "bi-shop", label: "Sellers" },
     { to: "/admin/orders", icon: "bi-basket", label: "Orders" },
+    { to: "/admin/coupons", icon: "bi-ticket-perforated", label: "Coupons" },
     //{ to: "/admin/settings", icon: "bi-gear", label: "Settings" },
 ];
 

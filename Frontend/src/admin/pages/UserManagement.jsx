@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import PageTitle from "../components/PageTitle";
 import { Modal, Button, Form, Spinner, InputGroup, FormControl } from "react-bootstrap";
@@ -40,7 +41,7 @@ const UserManagement = () => {
   const fileInputRef = useRef(null);
   const [importing, setImporting] = useState(false);
 
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = `${GLOBAL_API_URL}`;
 
   // Fetch users with pagination and sorting
   const fetchUsers = async () => {
@@ -343,7 +344,7 @@ const UserManagement = () => {
                           <tr key={user._id}>
                             <td>
                               <img
-                                src={user.avatar ? `http://localhost:5000${user.avatar}` : 'https://via.placeholder.com/40'}
+                                src={user.avatar ? `${GLOBAL_DOMAIN_URL}${user.avatar}` : 'https://via.placeholder.com/40'}
                                 alt={user.name}
                                 style={{
                                   width: '40px',
@@ -557,7 +558,7 @@ const UserManagement = () => {
             <div className="p-3">
               <div className="text-center mb-4">
                 <img
-                  src={detailUser.avatar ? `http://localhost:5000${detailUser.avatar}` : 'https://via.placeholder.com/150'}
+                  src={detailUser.avatar ? `${GLOBAL_DOMAIN_URL}${detailUser.avatar}` : 'https://via.placeholder.com/150'}
                   alt={detailUser.name}
                   style={{
                     width: '150px',

@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import { ReactComponent as IconPerson } from "bootstrap-icons/icons/person.svg";
 import { ReactComponent as IconEnvelope } from "bootstrap-icons/icons/envelope.svg";
@@ -40,6 +41,11 @@ const MyProfileView = () => {
   const [addressFormErrors, setAddressFormErrors] = useState({});
   const [editingAddressId, setEditingAddressId] = useState(null);
   const editableFieldRefs = useRef({});
+  const fileInputRef = useRef(null);
+
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     // Get user data from localStorage
@@ -72,7 +78,7 @@ const MyProfileView = () => {
 
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/api/address/user/${userId}`,
+        `${GLOBAL_API_URL}/address/user/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${savedUser.tokens.accessToken}`,
@@ -108,7 +114,11 @@ const MyProfileView = () => {
         fetchAddresses(savedUser.id);
       }
     } else if (error.response?.status === 400) {
-      toast.error(`📝 ${error.response.data.message || 'Please fill all required fields'}`);
+      if (error.response.data.errors) {
+        Object.values(error.response.data.errors).forEach(err => toast.error(`📝 ${err}`));
+      } else {
+        toast.error(`📝 ${error.response.data.message || 'Please fill all required fields'}`);
+      }
     } else {
       toast.error(`❌ Error ${action} address. Please try again`);
     }
@@ -166,8 +176,8 @@ const MyProfileView = () => {
 
       if (!addressFormData.mobile.trim()) {
         errors.mobile = 'Mobile number is required';
-      } else if (!/^\d{10}$/.test(addressFormData.mobile.trim())) {
-        errors.mobile = 'Mobile number must be exactly 10 digits';
+      } else if (!/^\+?[0-9]{10,15}$/.test(addressFormData.mobile.trim())) {
+        errors.mobile = 'Mobile number must be 10-15 digits with an optional leading +';
       }
 
       // If there are errors, set them and return
@@ -181,8 +191,8 @@ const MyProfileView = () => {
 
       setLoading(true);
       const url = editingAddressId
-        ? `http://localhost:5000/api/address/${editingAddressId}`
-        : 'http://localhost:5000/api/address';
+        ? `${GLOBAL_API_URL}/address/${editingAddressId}`
+        : `${GLOBAL_API_URL}/address`;
 
       const method = editingAddressId ? 'put' : 'post';
 
@@ -227,6 +237,11 @@ const MyProfileView = () => {
   };
 
   const handleDeleteAddress = async (addressId) => {
+    if (addresses.length <= 1) {
+      toast.error('Cannot delete your only address. Please add another address first.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this address? This action cannot be undone.')) {
       return;
     }
@@ -240,7 +255,7 @@ const MyProfileView = () => {
 
       setLoading(true);
       const response = await axios.delete(
-        `http://localhost:5000/api/address/${addressId}`,
+        `${GLOBAL_API_URL}/address/${addressId}`,
         {
           headers: {
             Authorization: `Bearer ${savedUser.tokens.accessToken}`,
@@ -255,6 +270,37 @@ const MyProfileView = () => {
       }
     } catch (error) {
       handleApiError(error, 'deleting');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetDefault = async (addressId) => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      if (!savedUser || !savedUser.tokens?.accessToken) {
+        toast.error('🔒 Authentication required. Please login to manage addresses.');
+        return;
+      }
+
+      setLoading(true);
+      const response = await axios.put(
+        `${GLOBAL_API_URL}/address/${addressId}`,
+        { isDefault: true },
+        {
+          headers: {
+            Authorization: `Bearer ${savedUser.tokens.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success('⭐ Address set as default successfully!');
+        fetchAddresses(savedUser.id);
+      }
+    } catch (error) {
+      handleApiError(error, 'updating default');
     } finally {
       setLoading(false);
     }
@@ -323,7 +369,7 @@ const MyProfileView = () => {
 
       // Send data as JSON instead of FormData
       const response = await axios.put(
-        `http://localhost:5000/api/user/profile/update/${userData.id}`,
+        `${GLOBAL_API_URL}/user/profile/update/${userData.id}`,
         { [field]: formData[field] },
         {
           headers: {
@@ -366,6 +412,68 @@ const MyProfileView = () => {
         [field]: userData[field]
       }));
       setEditMode(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size must be less than 2MB');
+      e.target.value = null;
+      return;
+    }
+
+    if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
+      toast.error('Only JPG, PNG and WEBP images are allowed');
+      e.target.value = null;
+      return;
+    }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+
+    try {
+      setUploadingAvatar(true);
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await axios.put(
+        `${GLOBAL_API_URL}/user/profile/update/${userData.id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${userData.tokens.accessToken}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Profile image updated successfully!");
+        const updatedUserData = {
+          ...userData,
+          ...response.data.data
+        };
+        // Update user storage
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
+        setUserData(updatedUserData);
+        setAvatarFile(null); // Clear pending upload state
+      }
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast.error(error.response?.data?.message || "Error uploading image");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -439,6 +547,67 @@ const MyProfileView = () => {
             </div>
 
             <div className="card-body">
+              {/* AVATAR SECTION */}
+              <div className="d-flex flex-column align-items-center mb-5 pb-4 border-bottom position-relative">
+                  <div className="position-relative mb-3">
+                      <div 
+                         className="rounded-circle overflow-hidden shadow-sm border border-3 border-white d-flex justify-content-center align-items-center bg-light" 
+                         style={{ width: "130px", height: "130px" }}
+                      >
+                          {avatarPreview ? (
+                              <img src={avatarPreview} alt="Preview" className="w-100 h-100 object-fit-cover" />
+                          ) : userData?.avatar ? (
+                              <img src={`${GLOBAL_API_URL.replace('/api', '')}${userData.avatar}`} alt="Avatar" className="w-100 h-100 object-fit-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                              <IconPerson className="text-secondary" style={{ width: "60px", height: "60px" }} />
+                          )}
+                      </div>
+                      
+                      <button 
+                         className="btn btn-primary rounded-circle position-absolute shadow-sm"
+                         style={{ bottom: "0px", right: "0px", width: "40px", height: "40px", padding: 0 }}
+                         onClick={() => fileInputRef.current?.click()}
+                         title="Change Photo"
+                         disabled={uploadingAvatar}
+                      >
+                          <IconPencil />
+                      </button>
+                      <input 
+                         type="file" 
+                         ref={fileInputRef} 
+                         onChange={handleAvatarChange} 
+                         className="d-none" 
+                         accept="image/jpeg, image/png, image/webp, image/jpg" 
+                      />
+                  </div>
+                  
+                  {avatarFile && (
+                      <div className="d-flex align-items-center gap-2 animate__animated animate__fadeIn">
+                          <button 
+                             className="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm d-flex align-items-center"
+                             onClick={handleAvatarUpload}
+                             disabled={uploadingAvatar}
+                          >
+                             {uploadingAvatar ? (
+                                <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Uploading...</>
+                             ) : (
+                                "Save Photo"
+                             )}
+                          </button>
+                          <button 
+                             className="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm"
+                             onClick={() => {
+                                 setAvatarFile(null);
+                                 setAvatarPreview(null);
+                             }}
+                             disabled={uploadingAvatar}
+                          >
+                             Cancel
+                          </button>
+                      </div>
+                  )}
+              </div>
+              
               <div className="row g-4">
                 {/* User ID - Not editable */}
                 <div className="col-md-6">
@@ -638,20 +807,21 @@ const MyProfileView = () => {
                                 onChange={(e) => {
                                   setAddressFormData(prev => ({
                                     ...prev,
-                                    mobile: e.target.value.replace(/\D/g, '').slice(0, 10)
+                                    // Allow + and digits, limit to 16 length to fit + and 15 digits
+                                    mobile: e.target.value.replace(/[^\d+]/g, '').slice(0, 16)
                                   }));
                                   if (addressFormErrors.mobile) {
                                     setAddressFormErrors(prev => ({ ...prev, mobile: '' }));
                                   }
                                 }}
-                                maxLength="10"
+                                maxLength="16"
                                 minLength="10"
-                                pattern="[0-9]*"
-                                inputMode="numeric"
+                                pattern="^\+?[0-9]{10,15}$"
+                                inputMode="tel"
                                 required
                               />
-                              <label htmlFor="mobile">Mobile Number (10 digits)</label>
-                              <small className="text-muted d-block mt-1">Only digits, exactly 10 numbers required</small>
+                              <label htmlFor="mobile">Mobile Number (10-15 digits)</label>
+                              <small className="text-muted d-block mt-1">Optional leading + followed by 10-15 digits</small>
                               {addressFormErrors.mobile && (
                                 <div className="invalid-feedback d-block" style={{ color: '#dc3545' }}>
                                   {addressFormErrors.mobile}
@@ -724,8 +894,21 @@ const MyProfileView = () => {
                                 <IconLocation className="text-primary" />
                               </div>
                               <h6 className="mb-0">Delivery Address</h6>
+                              {address.isDefault && (
+                                <span className="badge bg-success ms-2">Default</span>
+                              )}
                             </div>
                             <div className="btn-group">
+                              {!address.isDefault && (
+                                <button
+                                  className="btn btn-outline-success btn-sm"
+                                  onClick={() => handleSetDefault(address._id)}
+                                  disabled={loading}
+                                  title="Set as Default"
+                                >
+                                  Default
+                                </button>
+                              )}
                               <button
                                 className="btn btn-outline-primary btn-sm"
                                 onClick={() => handleEditAddress(address)}
@@ -737,7 +920,7 @@ const MyProfileView = () => {
                               <button
                                 className="btn btn-outline-danger btn-sm"
                                 onClick={() => handleDeleteAddress(address._id)}
-                                disabled={loading}
+                                disabled={loading || addresses.length <= 1}
                                 title="Delete Address"
                               >
                                 <IconTrash />

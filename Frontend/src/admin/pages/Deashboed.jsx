@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -14,7 +15,7 @@ const Dashboard = () => {
         products: true,
         categories: true
     });
-    const API_URL = "http://localhost:5000/api";
+    const API_URL = `${GLOBAL_API_URL}`;
 
     useEffect(() => {
         fetchUserCount();
@@ -47,7 +48,7 @@ const Dashboard = () => {
    const fetchProductCount = async () => {
   try {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = Cookies.get("userId");
+    const userId = savedUser?._id || savedUser?.id;
 
     const response = await axios.get(`${API_URL}/product`, {
       headers: {
@@ -72,7 +73,7 @@ const Dashboard = () => {
     const fetchCategoryCount = async () => {
   try {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = Cookies.get("userId");
+    const userId = savedUser?._id || savedUser?.id;
 
     const response = await axios.get(`${API_URL}/category`, {
       headers: {
@@ -95,10 +96,9 @@ const Dashboard = () => {
 };
 
     const fetchRecentProducts = async () => {
-  debugger;
   try {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = Cookies.get("userId");
+    const userId = savedUser?._id || savedUser?.id;
 
     const response = await axios.get(`${API_URL}/product?page=1&limit=5`, {
       headers: {
@@ -123,7 +123,7 @@ const Dashboard = () => {
    const fetchRecentCategories = async () => {
   try {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = Cookies.get("userId");
+    const userId = savedUser?._id || savedUser?.id;
 
     const response = await axios.get(`${API_URL}/category?page=1&limit=5`, {
       headers: {
@@ -244,13 +244,13 @@ const Dashboard = () => {
                                                         <tr key={product._id}>
                                                             <td>
                                                                 <img 
-                                                                    src={product.images[0] || 'https://via.placeholder.com/50'} 
-                                                                    alt={product.name}
+                                                                    src={product?.images?.[0] || 'https://via.placeholder.com/50'} 
+                                                                    alt={product?.name}
                                                                     style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                                                                 />
                                                             </td>
-                                                            <td>{product.name}</td>
-                                                            <td>{product.category[0].name || 'N/A'}</td>
+                                                            <td>{product?.name}</td>
+                                                            <td>{product?.category?.[0]?.name || (typeof product?.category?.[0] === 'string' ? product?.category?.[0] : 'N/A')}</td>
                                                             <td>${product.price}</td>
                                                             <td>{product.stock}</td>
                                                             <td>
@@ -285,7 +285,7 @@ const Dashboard = () => {
                                                         <tr key={category._id}>
                                                             <td>
                                                                 <img 
-                                                                    src={category.image ? `http://localhost:5000${category.image}` : 'https://via.placeholder.com/50'} 
+                                                                    src={category.image ? `${GLOBAL_DOMAIN_URL}${category.image}` : 'https://via.placeholder.com/50'} 
                                                                     alt={category.name}
                                                                     style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
                                                                     onError={(e) => {

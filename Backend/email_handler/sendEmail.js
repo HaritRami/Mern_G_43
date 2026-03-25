@@ -1,29 +1,44 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-if (!process.env.ReSend_APIKEY) {
-    console.log("Provide ReSend API key inside the .env file");
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log("Provide EMAIL_USER and EMAIL_PASS API key inside the .env file");
 }
 
-const resend = new Resend(process.env.ReSend_APIKEY);
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+});
 
-const sendemail = async ({ sendTo, Subject, html }) => {
+const sendemail = async ({ sendTo, Subject, html, attachments }) => {
     try {
-        const { data, error } = await resend.emails.send({
-            from: 'nexamart <onboarding@resend.dev>',
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
             to: sendTo,
             subject: Subject,
             html: html,
-        });
-
-        if (error) {
-            console.log(error);
+        };
+        
+        if (attachments) {
+            mailOptions.attachments = attachments;
         }
 
-        return data;
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Email sent: " + info.response);
+        return info;
     } catch (error) {
-        console.log(error);
+        console.error("Email sending error:", error);
+        throw error;
     }
 };
+
 export default sendemail;

@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
 import PageTitle from "../components/PageTitle";
 import { Modal, Button, Form, Spinner, InputGroup, FormControl } from "react-bootstrap";
@@ -43,7 +44,7 @@ const CategoryManagement = () => {
   const [importing, setImporting] = useState(false);
 
   // Get API URL from .env
-  const API_URL = "http://localhost:5000/api/category";
+  const API_URL = `${GLOBAL_API_URL}/category`;
 
   // Fetch categories
   const fetchCategories = async () => {
@@ -513,7 +514,7 @@ const CategoryManagement = () => {
                           <td>
                             {category.image ? (
                               <img
-                                src={`http://localhost:5000${category.image}`}
+                                src={`${GLOBAL_DOMAIN_URL}${category.image}`}
                                 alt={category.name}
                                 style={{
                                   width: '50px',
@@ -522,7 +523,7 @@ const CategoryManagement = () => {
                                   borderRadius: '5px',
                                   cursor: 'pointer'
                                 }}
-                                onClick={() => handleImageClick(`http://localhost:5000${category.image}`)}
+                                onClick={() => handleImageClick(`${GLOBAL_DOMAIN_URL}${category.image}`)}
                               />
                             ) : (
                               <div
@@ -669,7 +670,7 @@ const CategoryManagement = () => {
               <div className="mb-3">
                 <p>Current Image:</p>
                 <img
-                  src={`http://localhost:5000${selectedCategory.image}`}
+                  src={`${GLOBAL_DOMAIN_URL}${selectedCategory.image}`}
                   alt="Category"
                   style={{
                     maxWidth: '200px',

@@ -132,6 +132,13 @@ const AdminDashboard = ({ children }) => {
             </Link>
           </li>
 
+          <li className="nav-item">
+            <Link className={`nav-link ${location.pathname !== "/orders" ? "collapsed" : ""}`} to="/orders">
+              <i className="bi bi-cart"></i>
+              <span>Orders</span>
+            </Link>
+          </li>
+
           {/* <li className="nav-item">
             <Link className={`nav-link ${location.pathname !== "/users" ? "collapsed" : ""}`} to="/users">
               <i className="bi bi-file-person"></i>

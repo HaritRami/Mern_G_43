@@ -9,7 +9,8 @@ import {
   deleteProduct,
   importProducts,
   getProductByBarcodeController,
-  getProductsByCategory
+  getProductsByCategory,
+  searchProducts
 } from "../controllers/product.controller.js";
 import multer from 'multer';
 
@@ -32,6 +33,7 @@ const excelUpload = multer({
 
 productRouter.post("/", authenticateToken, upload.array('images', 5), createProduct);
 productRouter.get("/", getAllProducts);
+productRouter.get("/search", searchProducts);
 productRouter.get("/:productId", getProductById);
 productRouter.put("/:productId", authenticateToken, upload.array('images', 5), updateProduct);
 productRouter.delete("/:productId", authenticateToken, deleteProduct);

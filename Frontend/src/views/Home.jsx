@@ -1,3 +1,4 @@
+import { API_URL as GLOBAL_API_URL, DOMAIN_URL as GLOBAL_DOMAIN_URL } from '../config/apiConfig';
 import React, { lazy, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { data } from "../data";
@@ -25,7 +26,7 @@ const HomeView = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/category"
+          `${GLOBAL_API_URL}/category`
         );
         if (response.data.success) {
           setCategories(response.data.data);
@@ -116,22 +117,13 @@ const HomeView = () => {
         ) : (
           <div className="row g-4">
             {categories.map((category) => {
-              const slug = category.name
-                .toString()
-                .trim()
-                .toLowerCase()
-                .replace(/&/g, "and")
-                .replace(/[^a-z0-9\s-]/g, "")
-                .replace(/\s+/g, "-")
-                .replace(/-+/g, "-");
-
               return (
                 <div
                   className="col-6 col-md-3"
                   key={category._id}
                 >
                   <Link
-                    to={`/products/category/${slug}`}
+                    to={`/products?category=${category._id}`}
                     className="text-decoration-none"
                   >
                     <div className="card category-card h-100">
@@ -139,7 +131,7 @@ const HomeView = () => {
                         {category.image ? (
                           <div className="category-image-wrapper">
                             <img
-                              src={`http://localhost:5000${category.image}`}
+                              src={`${GLOBAL_DOMAIN_URL}${category.image}`}
                               className="img-fluid rounded-circle category-image"
                               alt={category.name}
                             />
@@ -187,8 +179,8 @@ const HomeView = () => {
                 Limited time offer!
               </p>
               <Link
-                to="/category"
-                className="btn btn-light btn-lg"
+                to="/products"
+                className="btn btn-light btn-lg shadow-sm"
               >
                 Shop Now
               </Link>

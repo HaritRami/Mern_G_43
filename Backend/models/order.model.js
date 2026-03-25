@@ -55,6 +55,14 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: () => new Date(Date.now() + 3*24*60*60*1000) // default 3 days from creation
     },
+    couponCode: {
+      type: String,
+      default: "",
+    },
+    couponDiscount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true } // Correct placement of timestamps
 );
