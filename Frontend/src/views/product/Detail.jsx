@@ -19,7 +19,7 @@ const ProductDetailView = () => {
 
   useEffect(() => {
     // Scroll to top automatically when changing products
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const loadProductData = async () => {
       try {
@@ -43,7 +43,9 @@ const ProductDetailView = () => {
              _id: product._id,
              name: product.name,
              price: product.price,
-             images: product.images
+             images: product.images,
+             category: product.category || [],
+             discount: product.discount || 0
           }); 
           if (viewed.length > 8) viewed = viewed.slice(0, 8); // memory constrain
           localStorage.setItem('recentlyViewed', JSON.stringify(viewed));
@@ -76,7 +78,7 @@ const ProductDetailView = () => {
   const getAuthConfig = () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!savedUser || !savedUser.tokens?.accessToken) {
-      toast.error('Please login to add items to cart');
+      toast.error('Please login to checkout');
       navigate('/account/signin');
       return null;
     }
@@ -134,8 +136,8 @@ const ProductDetailView = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
-        <div className="spinner-border text-primary">
+      <div className="d-flex justify-content-center align-items-center bg-light" style={{ minHeight: "80vh" }}>
+        <div className="spinner-border text-primary" style={{width: '3rem', height: '3rem'}}>
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
@@ -144,28 +146,17 @@ const ProductDetailView = () => {
 
   if (!selectedProduct) {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-warning">
-          Product not found. <Link to="/products">View all products</Link>
-        </div>
+      <div className="container mt-5 py-5 text-center">
+        <h2 className="fw-bold mb-3">Product Not Found</h2>
+        <p className="text-muted mb-4">The item you are looking for does not exist or has been removed.</p>
+        <Link to="/products" className="btn btn-primary px-4 rounded-pill">View all products</Link>
       </div>
     );
   }
 
   // Update the image display in the main product section
   const renderMainImage = (product) => {
-    if (!product.images || product.images.length === 0) {
-      return (
-        <div className="product-image-container">
-          <img
-            src="https://via.placeholder.com/500"
-            className="img-fluid rounded shadow product-image"
-            alt="Product placeholder"
-          />
-        </div>
-      );
-    }
-
+    const primaryImg = product.images?.[0] ? (product.images[0].startsWith('http') ? product.images[0] : `${GLOBAL_DOMAIN_URL}${product.images[0]}`) : '/NO_IMG.png';
     const handleMouseMove = (e) => {
       if (!isZoomed) return;
       const { left, top, width, height } = e.target.getBoundingClientRect();
@@ -176,15 +167,18 @@ const ProductDetailView = () => {
 
     return (
       <div
-        className="product-image-container"
+        className="product-image-container premium-shadow rounded-4 bg-white"
         onMouseEnter={() => setIsZoomed(true)}
         onMouseLeave={() => setIsZoomed(false)}
         onMouseMove={handleMouseMove}
       >
+        {product.discount > 0 && (
+          <div className="corner-discount-badge shadow-lg">
+            {product.discount}%<br/><small>OFF</small>
+          </div>
+        )}
         <img
-          src={product.images[0].startsWith('http')
-            ? product.images[0]
-            : `${GLOBAL_DOMAIN_URL}${product.images[0]}`}
+          src={primaryImg}
           className="product-image"
           alt={product.name}
           style={{
@@ -192,399 +186,589 @@ const ProductDetailView = () => {
           }}
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = 'https://via.placeholder.com/500';
+            e.target.src = 'https://via.placeholder.com/600';
           }}
         />
+        <div className="zoom-hint d-flex align-items-center gap-2">
+           <i className="bi bi-zoom-in"></i> Hover to zoom
+        </div>
       </div>
     );
   };
 
-  // Update the product cards section
-  const renderProductCard = (product) => (
-    <div
-      className={`product-card card h-100 ${selectedProduct._id === product._id ? 'selected' : ''}`}
-      onClick={() => navigate(`/product/${product._id}`)}
-      style={{ cursor: "pointer" }}
-    >
-      <div className="card-image-container">
-        <img
-          src={product.images[0]?.startsWith('http')
-            ? product.images[0]
-            : `${GLOBAL_DOMAIN_URL}${product.images[0]}`}
-          className="card-img-top"
-          alt={product.name}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = 'https://via.placeholder.com/200';
-          }}
-        />
-      </div>
-      <div className="card-body">
-        <h5 className="card-title text-truncate">{product.name}</h5>
-        <div className="d-flex justify-content-between align-items-center">
-          <p className="card-text text-primary fw-bold mb-0">${product.price}</p>
-          {product.discount > 0 && (
-            <span className="badge bg-danger">
-              {product.discount}% OFF
-            </span>
-          )}
+  // Update the product cards section for Recently Viewed / Similar
+  const renderProductCard = (product) => {
+    const primaryImg = product.images?.[0] ? (product.images[0].startsWith('http') ? product.images[0] : `${GLOBAL_DOMAIN_URL}${product.images[0]}`) : '/NO_IMG.png';
+    return (
+      <div
+        className="product-hover-card"
+        onClick={() => navigate(`/product/${product._id}`)}
+      >
+        <div className="image-container">
+          {product.discount > 0 && <span className="discount-badge">{product.discount}% OFF</span>}
+          <img
+            src={primaryImg}
+            className="product-card-img"
+            alt={product.name}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/300';
+            }}
+          />
+          <div className="card-overlay">
+            <button className="quick-view-btn shadow" onClick={(e) => { e.stopPropagation(); navigate(`/product/${product._id}`); }}>
+              <i className="bi bi-eye"></i> View Details
+            </button>
+          </div>
+        </div>
+        <div className="product-info">
+          <span className="product-category text-truncate">{product.category?.[0]?.name || "Premium"}</span>
+          <h3 className="product-title" title={product.name}>
+             {product.name.length > 40 ? `${product.name.substring(0, 40)}...` : product.name}
+          </h3>
+          <div className="product-price-row mt-auto">
+            <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
+            <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
+              <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
+              <span className="small fw-bold text-dark">4.9</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Add CSS styles to the component
   const productStyles = `
+    .product-page-wrapper {
+      background-color: #f8fafc;
+      font-family: 'Inter', system-ui, sans-serif;
+      padding-bottom: 5rem;
+    }
+    
+    /* Product Container */
+    .premium-container {
+      background: white;
+      border-radius: 24px;
+      padding: 3rem;
+      box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+    
+    /* Image Gallery */
     .product-image-container {
       position: relative;
       width: 100%;
-      height: 500px;
+      height: 550px;
       overflow: hidden;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      cursor: zoom-in;
-      background: #f8f9fa;
+      cursor: crosshair;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 2rem;
     }
     .product-image {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      transition: transform 0.2s ease-out;
+      transition: transform 0.15s ease-out;
     }
     .product-image-container:hover .product-image {
-      transform: scale(2);
+      transform: scale(2.5);
     }
-    .product-thumbnails {
+    .corner-discount-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      color: white;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      margin-top: 20px;
-      flex-wrap: wrap;
+      font-weight: 800;
+      font-size: 1.1rem;
+      line-height: 1.1;
+      z-index: 10;
+      box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3);
+      border: 3px solid white;
     }
+    .zoom-hint {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.9);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+    
+    /* Thumbnails */
     .thumbnail-container {
       width: 80px;
       height: 80px;
-      border-radius: 4px;
+      border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
-      border: 2px solid transparent;
+      border: 2px solid #e2e8f0;
       transition: all 0.2s ease;
-      opacity: 0.7;
+      background: white;
+      padding: 5px;
     }
     .thumbnail-container:hover {
-      opacity: 0.9;
+      border-color: #94a3b8;
+      transform: translateY(-2px);
     }
     .thumbnail-container.active {
-      border-color: #0d6efd;
-      opacity: 1;
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.2);
     }
     .thumbnail-image {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-    }
-    .product-details {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      padding: 24px;
-    }
-    .product-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .product-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    .product-card.selected {
-      border-color: #0d6efd;
-    }
-    .card-image-container {
-      height: 200px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8f9fa;
-    }
-    .card-image-container img {
-      width: 100%;
-      height: 100%;
       object-fit: contain;
-      transition: transform 0.3s ease;
     }
-    .quantity-input {
-      width: 150px !important;
-      margin-right: 1rem;
+
+    /* Product Details Typography */
+    .detail-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
     }
-    .quantity-input .form-control {
-      text-align: center;
-      border-left: 0;
-      border-right: 0;
-      background-color: white;
+    .detail-price {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #667eea;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
     }
-    .quantity-input .btn {
-      width: 40px;
-      padding: 0.375rem;
+    .detail-price-old {
+      font-size: 1.25rem;
+      color: #94a3b8;
+      text-decoration: line-through;
+      font-weight: 600;
+    }
+    
+    /* Chips & Badges */
+    .attribute-chip {
+      background: #f1f5f9;
+      padding: 10px 16px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.9rem;
+    }
+    .attribute-chip i {
+      color: #667eea;
+      font-size: 1.1rem;
+    }
+    
+    /* Action Controls */
+    .action-controls {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .modern-qty-input {
+      background: white;
+      border-radius: 16px;
+      padding: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+      border: 1px solid #e2e8f0;
+      width: 140px;
+    }
+    .modern-qty-input .btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: none;
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .modern-qty-input .btn:hover:not(:disabled) {
+      background: #667eea;
+      color: white;
+    }
+    .modern-qty-input input {
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1e293b;
+    }
+    .modern-qty-input input:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    
+    .btn-add-cart-premium {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 1rem 2rem;
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-color: #dee2e6;
+      gap: 0.75rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 20px rgba(102,126,234,0.3);
     }
-    .quantity-input .btn:hover {
-      background-color: #0d6efd;
+    .btn-add-cart-premium:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 25px rgba(102,126,234,0.4);
       color: white;
-      border-color: #0d6efd;
     }
-    .add-to-cart-btn {
-      flex: 1;
-      padding: 0.5rem 2rem;
-      font-weight: 500;
+    .btn-add-cart-premium:disabled {
+      background: #cbd5e1;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Product Cards (Copied from ProductList for consistency) */
+    .product-hover-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.03);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+    }
+    .product-hover-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 30px -10px rgba(0,0,0,0.08);
+      border-color: rgba(102,126,234,0.2);
+    }
+    .image-container {
+      height: 220px;
+      background-color: #f8fafc;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 1.5rem;
+    }
+    .product-card-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .product-hover-card:hover .product-card-img {
+      transform: scale(1.1);
+    }
+    .discount-badge {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: linear-gradient(135deg, #f87171, #f43f5e);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 10px rgba(244,63,94,0.3);
+      z-index: 2;
+    }
+    .card-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      height: 50%;
+      display: flex;
+      align-items: flex-end;
+      padding: 1.5rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+    .product-hover-card:hover .card-overlay {
+      opacity: 1;
+    }
+    .quick-view-btn {
+      width: 100%;
+      background: white;
+      color: #1e293b;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      padding: 0.75rem;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      transition: all 0.2s ease;
     }
-    .add-to-cart-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+    .product-hover-card:hover .quick-view-btn {
+      transform: translateY(0);
     }
-    .trending-container {
+    .quick-view-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+    .product-info {
+      padding: 1.25rem;
       display: flex;
-      overflow-x: auto;
-      gap: 1rem;
-      padding-bottom: 0.5rem;
-      scrollbar-width: thin;
+      flex-direction: column;
+      flex-grow: 1;
     }
-    .trending-item {
-      min-width: 150px;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s;
+    .product-category {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
     }
-    .trending-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .product-title {
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 1.05rem;
+      margin-bottom: 1rem;
+      line-height: 1.4;
     }
-    .trending-image {
-      height: 120px;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-color: #f8f9fa;
+    .product-price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .trending-meta {
-      padding: 0.5rem;
+    .product-price {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #667eea;
     }
-    .trending-name {
-      font-size: 0.9rem;
-      margin-bottom: 0.25rem;
+    
+    .section-title {
+      font-weight: 800;
+      font-size: 2rem;
+      color: #0f172a;
+      position: relative;
+      display: inline-block;
+      margin-bottom: 2rem;
+    }
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 50%;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 2px;
     }
   `;
 
   return (
-    <>
-      <ToastContainer />
-      <div className="container-fluid py-4 min-vh-100 bg-light">
-        <style>{productStyles}</style>
-        {/* Product Header Section */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb">
-                <li className="breadcrumb-item"><Link to="/">Home</Link></li>
-                <li className="breadcrumb-item"><Link to="/products">All Products</Link></li>
-                <li className="breadcrumb-item active" aria-current="page">{selectedProduct.name}</li>
-              </ol>
-            </nav>
-          </div>
+    <div className="product-page-wrapper">
+      <ToastContainer position="bottom-right" />
+      <style>{productStyles}</style>
+
+      {/* Breadcrumb Navbar */}
+      <div className="bg-white border-bottom py-3 mb-5">
+        <div className="container">
+          <nav aria-label="breadcrumb">
+            <ol className="breadcrumb mb-0 fw-medium">
+              <li className="breadcrumb-item"><Link to="/" className="text-decoration-none text-muted">Home</Link></li>
+              <li className="breadcrumb-item"><Link to="/products" className="text-decoration-none text-muted">Catalog</Link></li>
+              <li className="breadcrumb-item active text-dark" aria-current="page">{selectedProduct.category?.[0]?.name || "Product"}</li>
+            </ol>
+          </nav>
         </div>
+      </div>
 
-        {/* Main Product Section */}
-        <div className="row">
-          {/* Left Column - Images */}
-          <div className="col-md-6 mb-4">
-            <div className="main-image-container position-relative overflow-hidden bg-white p-2 rounded shadow-sm border">
+      <div className="container">
+        {/* Main Product Presentation */}
+        <div className="premium-container mb-5">
+          <div className="row g-5">
+            {/* Left Column - Premium Gallery */}
+            <div className="col-lg-6">
               {renderMainImage(selectedProduct)}
+              
+              {/* Thumbnails */}
+              {selectedProduct.images && selectedProduct.images.length > 1 && (
+                <div className="d-flex gap-3 justify-content-center mt-4">
+                  {selectedProduct.images.map((img, index) => {
+                    const isImgActive = selectedProduct.images[0] === img;
+                    return (
+                      <div 
+                        key={index}
+                        className={`thumbnail-container ${isImgActive ? 'active' : ''}`}
+                        onClick={() => {
+                          setSelectedProduct({
+                            ...selectedProduct,
+                            images: [img, ...selectedProduct.images.filter(i => i !== img)]
+                          });
+                        }}
+                      >
+                        <img
+                          src={img.startsWith('http') ? img : `${GLOBAL_DOMAIN_URL}${img}`}
+                          className="thumbnail-image"
+                          alt={`Thumbnail ${index + 1}`}
+                          onError={(e) => { e.target.src = 'https://via.placeholder.com/80'; }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Thumbnail Images with click to change main image */}
-            <div className="d-flex gap-2 justify-content-center mt-3">
-              {selectedProduct.images?.map((img, index) => (
-                <img
-                  key={index}
-                  src={img.startsWith('http') ? img : `${GLOBAL_DOMAIN_URL}${img}`}
-                  className="border rounded cursor-pointer bg-white"
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    objectFit: 'contain',
-                    opacity: selectedProduct.images[0] === img ? 1 : 0.5,
-                    transition: 'opacity 0.2s ease',
-                    padding: '4px'
-                  }}
-                  alt={`${selectedProduct.name} view ${index + 1}`}
-                  onClick={() => {
-                    setSelectedProduct({
-                      ...selectedProduct,
-                      images: [
-                        img,
-                        ...selectedProduct.images.filter(i => i !== img)
-                      ]
-                    });
-                  }}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://via.placeholder.com/80';
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column - Product Details */}
-          <div className="col-md-6">
-            <div className="product-details p-4">
-              <h1 className="h3 mb-2">{selectedProduct.name}</h1>
-
-              {/* Price Section */}
+            {/* Right Column - Beautiful Details */}
+            <div className="col-lg-6 d-flex flex-column">
+              {/* Header Info */}
               <div className="mb-4">
-                <div className="d-flex align-items-center gap-2">
-                  <h2 className="h3 mb-0 text-primary">${selectedProduct.price}</h2>
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <span className="badge bg-dark bg-opacity-10 text-dark fw-bold px-3 py-2 rounded-pill text-uppercase" style={{letterSpacing: '1px'}}>
+                    {selectedProduct.category?.[0]?.name || "Premium Item"}
+                  </span>
+                  {selectedProduct.stock > 0 ? (
+                    <span className="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill"><i className="bi bi-check-circle-fill me-1"></i> In Stock ({selectedProduct.stock})</span>
+                  ) : (
+                    <span className="badge bg-danger bg-opacity-10 text-danger fw-bold px-3 py-2 rounded-pill"><i className="bi bi-x-circle-fill me-1"></i> Out of Stock</span>
+                  )}
+                </div>
+                
+                <h1 className="detail-title">{selectedProduct.name}</h1>
+                
+                <div className="d-flex align-items-center gap-3 mt-3">
+                  <div className="d-flex text-warning fs-5">
+                    <i className="bi bi-star-fill"></i>
+                    <i className="bi bi-star-fill"></i>
+                    <i className="bi bi-star-fill"></i>
+                    <i className="bi bi-star-fill"></i>
+                    <i className="bi bi-star-half"></i>
+                  </div>
+                  <span className="text-muted fw-medium">(128 reviews)</span>
+                </div>
+              </div>
+
+              <hr className="opacity-10 my-1" />
+
+              {/* Price Row */}
+              <div className="my-4">
+                <div className="detail-price">
+                  <span>${parseFloat(selectedProduct.price).toFixed(2)}</span>
                   {selectedProduct.discount > 0 && (
-                    <span className="badge bg-danger">
-                      {selectedProduct.discount}% OFF
-                    </span>
+                     <>
+                        <span className="detail-price-old lh-1">
+                          ${(selectedProduct.price / (1 - selectedProduct.discount / 100)).toFixed(2)}
+                        </span>
+                        <span className="badge bg-danger" style={{fontSize: '1rem', padding: '6px 12px'}}>
+                          🔥 Save {selectedProduct.discount}%
+                        </span>
+                     </>
                   )}
                 </div>
               </div>
 
-              {/* Quick Details */}
-              <div className="mb-4">
-                <table className="table table-sm">
-                  <tbody>
-                    <tr>
-                      <td className="text-muted">Stock:</td>
-                      <td>{selectedProduct.stock} {selectedProduct.unit}</td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">Category:</td>
-                      <td>{selectedProduct.category?.[0]?.name}</td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted">Barcode:</td>
-                      <td>{selectedProduct.barcodeId}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* Attributes Chips */}
+              <div className="d-flex flex-wrap gap-3 mb-5">
+                 <div className="attribute-chip">
+                    <i className="bi bi-upc-scan"></i>
+                    <span><strong>SKU:</strong> {selectedProduct.barcodeId || 'N/A'}</span>
+                 </div>
+                 <div className="attribute-chip">
+                    <i className="bi bi-shield-check"></i>
+                    <span><strong>Warranty:</strong> 1 Year</span>
+                 </div>
+                 <div className="attribute-chip">
+                    <i className="bi bi-truck"></i>
+                    <span><strong>Delivery:</strong> Free</span>
+                 </div>
               </div>
 
-              {/* Description */}
-              <div className="mb-4">
-                <h5 className="fw-bold">Description</h5>
-                <p className="text-muted">{selectedProduct.description}</p>
+              {/* Description Blocks */}
+              <div className="mb-5 flex-grow-1">
+                <h5 className="fw-bolder mb-3 text-dark">About This Item</h5>
+                <p className="text-secondary lh-lg" style={{fontSize: '1.05rem'}}>
+                  {selectedProduct.description || "Experience the perfect blend of innovation and elegance. This premium product is crafted to elevate your daily routine, featuring state-of-the-art materials and an intuitive design."}
+                </p>
               </div>
 
-              {/* Add to Cart Section */}
-              <div className="d-flex align-items-center mb-4">
-                <div className="input-group quantity-input shadow-sm">
-                  <button
-                    className="btn btn-light border"
-                    type="button"
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                  >
-                    <i className="bi bi-dash"></i>
-                  </button>
-                  <input
-                    type="text"
-                    className="form-control text-center fw-bold"
-                    value={quantity}
-                    readOnly
-                  />
-                  <button
-                    className="btn btn-light border"
-                    type="button"
-                    onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= selectedProduct.stock}
-                  >
-                    <i className="bi bi-plus"></i>
+              {/* Action Controls Footer */}
+              <div className="action-controls mt-auto">
+                <div className="d-flex flex-column flex-sm-row align-items-center gap-3">
+                  <div className="input-group modern-qty-input shadow-sm">
+                    <button type="button" className="btn" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}>
+                      <i className="bi bi-dash-lg"></i>
+                    </button>
+                    <input type="text" className="form-control text-center" value={quantity} readOnly />
+                    <button type="button" className="btn" onClick={() => handleQuantityChange(1)} disabled={quantity >= selectedProduct.stock}>
+                      <i className="bi bi-plus-lg"></i>
+                    </button>
+                  </div>
+                  <button className="btn-add-cart-premium" onClick={handleAddToCart} disabled={selectedProduct.stock === 0}>
+                    <i className="bi bi-bag-plus fs-4"></i>
+                    {selectedProduct.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                   </button>
                 </div>
-                <button
-                  className="btn btn-primary add-to-cart-btn shadow-sm"
-                  onClick={handleAddToCart}
-                  disabled={selectedProduct.stock === 0}
-                >
-                  <i className="bi bi-cart-plus"></i>
-                  {selectedProduct.stock === 0 ? 'Out of Stock' : 'Add to cart'}
-                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Recently Viewed Section */}
-        {recentlyViewed.length > 1 && (
-          <div className="row mt-5">
-            <div className="col-12">
-              <div className="card p-4 mb-3 shadow-sm border-0">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="mb-0 fw-bold">Recently Viewed</h5>
-                  <small className="text-muted">Jump right back</small>
+        {/* Similar Products */}
+        {relatedProducts.length > 0 && (
+          <div className="mb-5 pt-4">
+            <h2 className="section-title">Similar Items You'll Love</h2>
+            <div className="row g-4">
+              {relatedProducts.map((product) => (
+                <div key={product._id} className="col-12 col-sm-6 col-lg-3">
+                  {renderProductCard(product)}
                 </div>
-  
-                <div className="trending-container">
-                  {recentlyViewed.filter(p => p._id !== selectedProduct._id).map((p) => (
-                      <div
-                        key={p._id}
-                        className="trending-item bg-white"
-                        onClick={() => {
-                          navigate(`/product/${p._id}`);
-                        }}
-                        role="button"
-                      >
-                        <div
-                          className="trending-image"
-                          style={{
-                            backgroundImage: `url(${p.images && p.images[0] ? (p.images[0].startsWith('http') ? p.images[0] : `${GLOBAL_DOMAIN_URL}${p.images[0]}`) : '/NO_IMG.png'})`
-                          }}
-                        />
-                        <div className="trending-meta border-top bg-light">
-                          <div className="trending-name text-truncate fw-semibold">{p.name}</div>
-                          <div className="trending-price text-primary fw-bold">${p.price}</div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Similar Products Section */}
-        {relatedProducts.length > 0 && (
-          <div className="row mt-5">
-            <div className="col-12 border-top pt-5">
-              <h4 className="mb-4 fw-bold">Similar Products</h4>
-              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
-                {relatedProducts.map((product) => (
-                  <div key={product._id} className="col">
-                    {renderProductCard(product)}
-                  </div>
-                ))}
-              </div>
+        {/* Recently Viewed */}
+        {recentlyViewed.length > 1 && (
+          <div className="mb-5 pt-4">
+            <h2 className="section-title">Recently Viewed</h2>
+            <div className="row flex-row flex-nowrap overflow-auto pb-4 gap-0" style={{scrollbarWidth: 'thin'}}>
+              {recentlyViewed.filter(p => p._id !== selectedProduct._id).map((product) => (
+                <div key={product._id} className="col-10 col-sm-6 col-lg-3 flex-shrink-0">
+                  {renderProductCard(product)}
+                </div>
+              ))}
             </div>
           </div>
         )}
+
       </div>
-    </>
+    </div>
   );
 };
 

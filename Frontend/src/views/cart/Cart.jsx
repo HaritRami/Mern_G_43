@@ -6,10 +6,6 @@ import { toast } from "react-toastify";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const CouponApplyForm = lazy(() =>
-  import("../../components/others/CouponApplyForm")
-);
-
 // Add CSS styles for the cart
 const cartStyles = `
   .cart-header {
@@ -364,11 +360,6 @@ const CartView = () => {
     }
   };
 
-  const onSubmitApplyCouponCode = async (values) => {
-    // Implement coupon logic here
-    toast.info('Coupon functionality coming soon!');
-  };
-
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -519,11 +510,7 @@ const CartView = () => {
 
             <div className="col-lg-4">
               <div className="summary-card p-4">
-                <h3 className="summary-title">Order Summary</h3>
-                
-                <div className="mb-4">
-                  <CouponApplyForm onSubmit={onSubmitApplyCouponCode} />
-                </div>
+                <h3 className="summary-title mb-4">Order Summary</h3>
 
                 <div className="summary-item">
                   <span>Subtotal</span>

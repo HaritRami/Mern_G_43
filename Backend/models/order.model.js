@@ -22,6 +22,10 @@ const orderSchema = new mongoose.Schema(
         type: String,
         default: '' // optional name field
       },
+      quantity: {
+        type: Number,
+        default: 1
+      },
       images: {
         type: [String],
         default: [],

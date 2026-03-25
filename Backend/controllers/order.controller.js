@@ -238,7 +238,7 @@ export const createCheckoutSession = async (req, res) => {
             userId: [authUserId],
             orderId: itemOrderId,
             productId: item.productId._id,
-            productDetail: { name: item.productId.name, images: item.productId.images },
+            productDetail: { name: item.productId.name, images: item.productId.images, quantity: item.quantity || 1 },
             paymentId: paymentId || "",
             paymentStatus: paymentStatus || "",
             deliveryAddress: addressObj._id || addressObj,
@@ -249,6 +249,11 @@ export const createCheckoutSession = async (req, res) => {
         });
         await newOrder.save();
         newOrders.push(newOrder);
+
+        // Deduct stock from the database
+        await ProductModel.findByIdAndUpdate(item.productId._id || item.productId, {
+            $inc: { stock: -item.quantity }
+        });
     }
 
     // Clear cart in DB

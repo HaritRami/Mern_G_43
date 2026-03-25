@@ -453,7 +453,7 @@ const Tracking = () => {
                           </div>
                           <div className="flex-grow-1">
                               <h6 className="fw-bold text-dark mb-1">{productDetail?.name || 'Product No Longer Available'}</h6>
-                              <div className="text-muted small mb-2">Quantity: <span className="fw-bold text-dark">{order?.quantity || 1}</span></div>
+                              <div className="text-muted small mb-2">Quantity: <span className="fw-bold text-dark">{productDetail?.quantity || 1}</span></div>
                               <h5 className="fw-bold text-success mb-0">₹{order?.totalAmt || order?.subTotalAmt || '0.00'}</h5>
                           </div>
                       </div>

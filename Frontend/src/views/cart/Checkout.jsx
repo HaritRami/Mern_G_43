@@ -586,7 +586,7 @@ const CheckoutView = () => {
                           <input type="tel" className="form-control" placeholder="Mobile" value={newAddress.mobile} onChange={(e) => setNewAddress({...newAddress, mobile: e.target.value})} />
                         </div>
                         <div className="col-12 mt-3">
-                          <button type="button" className="btn btn-primary me-2" onClick={handleAddNewAddress} disabled={!newAddress.address_line || !newAddress.city || !newAddress.state || !newAddress.country || !newAddress.mobile}>Save Address</button>
+                          <button type="button" className="btn btn-primary me-2" onClick={handleAddNewAddress} disabled={loading || !newAddress.address_line || !newAddress.city || !newAddress.state || !newAddress.country || !newAddress.mobile}>Save Address</button>
                           {addresses.length > 0 && (
                             <button type="button" className="btn btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
                           )}

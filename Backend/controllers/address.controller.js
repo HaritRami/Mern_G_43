@@ -109,6 +109,32 @@ export async function createAddressController(request, response) {
       });
     }
 
+    // Check if exact duplicate address already exists for this user
+    const duplicateAddress = await AddressModel.findOne({
+      user,
+      address_line,
+      city,
+      state,
+      country,
+      mobile,
+      is_delete: false
+    });
+
+    if (duplicateAddress) {
+      if (isDefault) {
+        // Unset other defaults and set this existing one as default
+        await AddressModel.updateMany({ user, is_delete: false }, { isDefault: false });
+        duplicateAddress.isDefault = true;
+        await duplicateAddress.save();
+      }
+      return response.status(200).json({
+        message: "Address already exists.",
+        error: false,
+        success: true,
+        data: duplicateAddress
+      });
+    }
+
     // Check if user has any addresses
     const existingAddressesCount = await AddressModel.countDocuments({ user, is_delete: false });
     

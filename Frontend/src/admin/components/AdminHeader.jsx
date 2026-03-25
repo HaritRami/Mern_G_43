@@ -119,21 +119,21 @@ const AdminDashboard = ({ children }) => {
           </li>
 
           <li className="nav-item">
-            <Link className={`nav-link ${location.pathname !== "/products" ? "collapsed" : ""}`} to="/products">
+            <Link className={`nav-link ${location.pathname !== "/seller/products" ? "collapsed" : ""}`} to="/seller/products">
               <i className="bi bi-box-seam"></i>
               <span>All Products</span>
             </Link>
           </li>
 
           <li className="nav-item">
-            <Link className={`nav-link ${location.pathname !== "/categories" ? "collapsed" : ""}`} to="/categories">
+            <Link className={`nav-link ${location.pathname !== "/seller/categories" ? "collapsed" : ""}`} to="/seller/categories">
               <i className="bi bi-list-check"></i>
               <span>Categories</span>
             </Link>
           </li>
 
           <li className="nav-item">
-            <Link className={`nav-link ${location.pathname !== "/orders" ? "collapsed" : ""}`} to="/orders">
+            <Link className={`nav-link ${location.pathname !== "/seller/orders" ? "collapsed" : ""}`} to="/seller/orders">
               <i className="bi bi-cart"></i>
               <span>Orders</span>
             </Link>

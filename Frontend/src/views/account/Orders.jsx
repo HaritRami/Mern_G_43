@@ -207,7 +207,7 @@ const OrdersView = () => {
                             
                             <div className="d-flex align-items-center mt-2 small">
                                 <span className="bg-light text-dark px-2 py-1 rounded me-3 border fw-semibold">
-                                     Qty: {order?.quantity || 1}
+                                     Qty: {productDetail?.quantity || 1}
                                 </span>
                                 <span className="text-secondary fw-bold fs-6">
                                      ₹{order?.totalAmt || order?.subTotalAmt || '0.00'}

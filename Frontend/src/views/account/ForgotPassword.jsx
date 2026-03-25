@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import React, { lazy } from "react";
 const ForgotPasswordForm = lazy(() =>
   import("../../components/account/ForgotPasswordForm")
 );
@@ -12,7 +12,9 @@ const ForgotPasswordView = () => {
       <div className="row justify-content-md-center ">
         <div className="col-md-4 p-3 border">
           <h4 className="text-center">Forgot Password</h4>
-          <ForgotPasswordForm onSubmit={onSubmit} />
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <ForgotPasswordForm onSubmit={onSubmit} />
+          </React.Suspense>
         </div>
       </div>
     </div>
