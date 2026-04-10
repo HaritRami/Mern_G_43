@@ -93,20 +93,20 @@ const Header = () => {
       <style>{headerStyles}</style>
       <nav className="navbar navbar-expand-lg bg-white sticky-top shadow-sm py-2">
         <div className="container-fluid px-lg-4">
-          
+
           {/* Logo Section */}
           <Link to="/" className="navbar-brand brand-logo d-flex align-items-center">
-             Nexa Mart
+            Nexa Mart
           </Link>
 
           {/* Mobile Collapse Toggle */}
-          <button 
-            className="navbar-toggler border-0" 
-            type="button" 
-            data-bs-toggle="collapse" 
-            data-bs-target="#navbarContent" 
-            aria-controls="navbarContent" 
-            aria-expanded="false" 
+          <button
+            className="navbar-toggler border-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarContent"
+            aria-controls="navbarContent"
+            aria-expanded="false"
             aria-label="Toggle navigation"
           >
             <span className="navbar-toggler-icon"></span>
@@ -114,7 +114,7 @@ const Header = () => {
 
           {/* Collapsible Content */}
           <div className="collapse navbar-collapse" id="navbarContent">
-            
+
             {/* Center Search Bar */}
             <div className="mx-auto w-100 mt-3 mt-lg-0 px-lg-4" style={{ maxWidth: '600px' }}>
               <Search />
@@ -122,7 +122,7 @@ const Header = () => {
 
             {/* Right Action Icons */}
             <div className="d-flex align-items-center gap-3 ms-lg-auto mt-3 mt-lg-0 justify-content-center justify-content-lg-end">
-              
+
               {/* Always Visible Cart Feature */}
               <Link to="/cart" className="btn btn-primary rounded-pill px-3 nav-btn-action position-relative d-flex align-items-center">
                 <i className="bi bi-cart3 fs-5"></i>
@@ -144,34 +144,34 @@ const Header = () => {
                     aria-expanded="false"
                   >
                     {activeUser?.avatar ? (
-                        <img 
-                          src={`${GLOBAL_API_URL.replace('/api', '')}${activeUser.avatar}`} 
-                          alt="Profile" 
-                          className="w-100 h-100 object-fit-cover" 
-                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} 
-                        />
+                      <img
+                        src={`${GLOBAL_API_URL.replace('/api', '')}${activeUser.avatar}`}
+                        alt="Profile"
+                        className="w-100 h-100 object-fit-cover"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                      />
                     ) : null}
                     <i className="bi bi-person-fill fs-5 text-secondary" style={{ display: activeUser?.avatar ? 'none' : 'block' }}></i>
                   </button>
-                  
+
                   <ul className="dropdown-menu dropdown-menu-end mt-2 animate slideIn" aria-labelledby="userDropdown">
                     <li>
                       <Link className="dropdown-item d-flex align-items-center" to="/account/profile">
                         <i className="bi bi-person-circle fs-5 me-3 text-secondary"></i>
                         <span className="text-truncate" style={{ maxWidth: '150px' }}>
-                           {activeUser?.name || 'My Profile'}
+                          {activeUser?.name || 'My Profile'}
                         </span>
                       </Link>
                     </li>
-                     <li>
+                    <li>
                       <Link className="dropdown-item d-flex align-items-center" to="/account/orders">
-                        <i className="bi bi-box-seam-fill fs-5 me-3 text-primary"></i> 
+                        <i className="bi bi-box-seam-fill fs-5 me-3 text-primary"></i>
                         My Orders
                       </Link>
                     </li>
                     <li>
                       <Link className="dropdown-item d-flex align-items-center" to="/account/orders">
-                        <i className="bi bi-geo-alt-fill fs-5 me-3 text-success"></i> 
+                        <i className="bi bi-geo-alt-fill fs-5 me-3 text-success"></i>
                         Track Order
                       </Link>
                     </li>

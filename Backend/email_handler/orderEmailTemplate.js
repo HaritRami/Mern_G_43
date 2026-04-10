@@ -98,7 +98,7 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
           </div>
 
           <div class="cta-container">
-            <a href="http://localhost:3000/category" class="cta-button">Continue Shopping</a>
+            <a href="http://localhost:3000" class="cta-button">Continue Shopping</a>
           </div>
         </div>
         <div class="footer">

@@ -74,11 +74,11 @@ const OrderConfirmation = () => {
       <style>{confirmationStyles}</style>
       <div className="success-page-wrapper">
         <div className="confirmation-card">
-          
+
           <div className="success-icon-wrapper">
             <i className="bi bi-check-circle-fill success-icon"></i>
           </div>
-          
+
           <h2 className="fw-bold mb-3 text-dark">Payment Successful!</h2>
           <p className="text-muted mb-4 px-md-4">
             Thank you for shopping with NexaMart! Your order has been securely processed and is being prepared for shipment.
@@ -105,7 +105,7 @@ const OrderConfirmation = () => {
               <i className="bi bi-arrow-left me-2"></i> Continue Shopping
             </Link>
           </div>
-          
+
           <p className="text-muted small mt-4 mb-0">
             A confirmation email will be sent to your registered email address shortly. Estimated tracking start: <span className="fw-bold text-dark">{formattedDate}</span>.
           </p>

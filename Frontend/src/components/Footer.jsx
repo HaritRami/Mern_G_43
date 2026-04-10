@@ -82,17 +82,17 @@ const Footer = () => {
   return (
     <footer className="footer-wrapper pt-5 mt-auto">
       <style>{footerStyles}</style>
-      
+
       {/* Main Footer Content */}
       <div className="container pb-5">
         <div className="row g-4 justify-content-between">
-          
+
           {/* Column 1: About & Logo */}
           <div className="col-lg-4 col-md-6 pe-lg-5">
             <h5 className="footer-title">Nexa Mart</h5>
             <p className="text-secondary lh-lg mb-4" style={{ fontSize: '0.95rem' }}>
-              Your ultimate destination for discovering premium products. 
-              We blend industry-leading technology heavily with exceptional customer 
+              Your ultimate destination for discovering premium products.
+              We blend industry-leading technology heavily with exceptional customer
               service to bring you a seamless shopping experience from click to delivery.
             </p>
             <div className="d-flex gap-2 mt-4">
@@ -111,8 +111,8 @@ const Footer = () => {
               <li><Link to="/" className="footer-link">Home Portfolio</Link></li>
               <li><Link to="/products" className="footer-link">All Products</Link></li>
               <li><Link to="/cart" className="footer-link">Shopping Cart</Link></li>
-              <li><Link to="/account/orders" className="footer-link">My Orders</Link></li>
-              <li><Link to="/account/orders" className="footer-link">Track Shipment</Link></li>
+              //<li><Link to="/account/orders" className="footer-link">My Orders</Link></li>
+              <li><Link to="/cart/tracking" className="footer-link">Track Shipment</Link></li>
             </ul>
           </div>
 
@@ -135,7 +135,7 @@ const Footer = () => {
               <i className="bi bi-geo-alt-fill contact-icon"></i>
               <div>
                 <strong className="text-light d-block mb-1">Headquarters</strong>
-                1355 Market St, Suite 900<br/>San Francisco, CA 94103
+                1355 Market St, Suite 900<br />San Francisco, CA 94103
               </div>
             </div>
             <div className="contact-item">
@@ -159,41 +159,41 @@ const Footer = () => {
 
       {/* Partners & Affiliates Bar */}
       <div className="container-fluid" style={{ backgroundColor: '#16191d' }}>
-          <div className="container py-3">
-             <div className="row align-items-center text-center text-md-start">
-                 <div className="col-md-6 d-flex flex-wrap justify-content-center justify-content-md-start gap-4 mb-3 mb-md-0">
-                    <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
-                      <i className="bi bi-briefcase-fill text-warning me-2"></i> Partner With Us
-                    </Link>
-                    <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
-                      <i className="bi bi-badge-ad-fill text-info me-2"></i> Advertise
-                    </Link>
-                    <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
-                      <i className="bi bi-gift-fill text-danger me-2"></i> Gift Cards
-                    </Link>
-                 </div>
-                 <div className="col-md-6 d-flex flex-wrap justify-content-center justify-content-md-end gap-2 px-3">
-                    <img src="../../images/payment/visa.webp" width="36" alt="Visa" className="bg-white rounded p-1"/>
-                    <img src="../../images/payment/american_express.webp" width="36" alt="Amex" className="bg-white rounded p-1"/>
-                    <img src="../../images/payment/maestro.webp" width="36" alt="Maestro" className="bg-white rounded p-1"/>
-                    <img src="../../images/payment/paypal.webp" width="36" alt="Paypal" className="bg-white rounded p-1"/>
-                    <img src="../../images/payment/rupay.webp" width="36" alt="Rupay" className="bg-white rounded p-1"/>
-                    <img src="../../images/payment/upi.webp" width="36" alt="UPI" className="bg-white rounded p-1"/>
-                 </div>
-             </div>
+        <div className="container py-3">
+          <div className="row align-items-center text-center text-md-start">
+            <div className="col-md-6 d-flex flex-wrap justify-content-center justify-content-md-start gap-4 mb-3 mb-md-0">
+              <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
+                <i className="bi bi-briefcase-fill text-warning me-2"></i> Partner With Us
+              </Link>
+              <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
+                <i className="bi bi-badge-ad-fill text-info me-2"></i> Advertise
+              </Link>
+              <Link to="/" className="text-secondary text-decoration-none small fw-semibold link-light">
+                <i className="bi bi-gift-fill text-danger me-2"></i> Gift Cards
+              </Link>
+            </div>
+            <div className="col-md-6 d-flex flex-wrap justify-content-center justify-content-md-end gap-2 px-3">
+              <img src="../../images/payment/visa.webp" width="36" alt="Visa" className="bg-white rounded p-1" />
+              <img src="../../images/payment/american_express.webp" width="36" alt="Amex" className="bg-white rounded p-1" />
+              <img src="../../images/payment/maestro.webp" width="36" alt="Maestro" className="bg-white rounded p-1" />
+              <img src="../../images/payment/paypal.webp" width="36" alt="Paypal" className="bg-white rounded p-1" />
+              <img src="../../images/payment/rupay.webp" width="36" alt="Rupay" className="bg-white rounded p-1" />
+              <img src="../../images/payment/upi.webp" width="36" alt="UPI" className="bg-white rounded p-1" />
+            </div>
           </div>
+        </div>
       </div>
 
       {/* Bottom Copyright Bar */}
       <div className="bottom-bar py-3 text-center">
         <div className="container">
-           <p className="text-secondary small mb-0 fw-semibold">
-              &copy; {new Date().getFullYear()} NexaMart E-Commerce. All rights reserved. 
-              <span className="ms-2 opacity-50 fw-normal">(v{process.env.REACT_APP_VERSION || '1.0.0'})</span>
-           </p>
+          <p className="text-secondary small mb-0 fw-semibold">
+            &copy; {new Date().getFullYear()} NexaMart E-Commerce. All rights reserved.
+            <span className="ms-2 opacity-50 fw-normal">(v{process.env.REACT_APP_VERSION || '1.0.0'})</span>
+          </p>
         </div>
       </div>
-      
+
     </footer>
   );
 };

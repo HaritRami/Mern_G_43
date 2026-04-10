@@ -206,7 +206,7 @@ export async function registerUserController(request, response) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: "Verification Mail",
+      subject: "Welcome to NEXA-Mart",
       html: varificationEmailTemplate(newUser.name, verificationURL)
     };
 

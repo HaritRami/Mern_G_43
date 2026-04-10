@@ -272,7 +272,7 @@ const Tracking = () => {
 
   useEffect(() => {
     fetchOrder();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
   // Loading Skeleton Component
@@ -332,12 +332,12 @@ const Tracking = () => {
   // Logic mapping against dates
   const determineStepStatus = () => {
     let completedCount = 0;
-    
+
     if (order?.paymentStatus !== 'Failed' && order?.paymentStatus !== 'Cancelled') {
       completedCount = 1; // Placed
       steps[0].dateStr = new Date(order.createdAt).toLocaleDateString();
     }
-    
+
     if (order?.paymentStatus === 'Completed' || order?.paymentStatus === 'COD' || order?.paymentStatus === 'Paid') {
       completedCount = 2; // Processing
     }
@@ -347,13 +347,13 @@ const Tracking = () => {
       steps[2].dateStr = trackingDate.toLocaleDateString();
     }
 
-    if (trackingDate && now >= new Date(trackingDate.getTime() + 1*24*60*60*1000)) {
+    if (trackingDate && now >= new Date(trackingDate.getTime() + 1 * 24 * 60 * 60 * 1000)) {
       completedCount = 4; // Out for Delivery
     }
 
-    if (trackingDate && now >= new Date(trackingDate.getTime() + 2*24*60*60*1000)) {
-        completedCount = 5; // Delivered
-        steps[4].dateStr = new Date(trackingDate.getTime() + 2*24*60*60*1000).toLocaleDateString();
+    if (trackingDate && now >= new Date(trackingDate.getTime() + 2 * 24 * 60 * 60 * 1000)) {
+      completedCount = 5; // Delivered
+      steps[4].dateStr = new Date(trackingDate.getTime() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString();
     }
 
     return completedCount;
@@ -366,9 +366,9 @@ const Tracking = () => {
   // Destructure with fallbacks
   const productDetail = order?.productDetail || {};
   const productImages = productDetail?.images || [];
-  const displayImage = productImages.length > 0 
-                        ? (productImages[0].startsWith('http') ? productImages[0] : `${GLOBAL_DOMAIN_URL}${productImages[0]}`) 
-                        : 'https://via.placeholder.com/80?text=No+Img';
+  const displayImage = productImages.length > 0
+    ? (productImages[0].startsWith('http') ? productImages[0] : `${GLOBAL_DOMAIN_URL}${productImages[0]}`)
+    : 'https://via.placeholder.com/80?text=No+Img';
 
   return (
     <div className="tracking-container">
@@ -377,20 +377,20 @@ const Tracking = () => {
       {/* Header section (fades in quickly) */}
       <div className="container animate-stagger" style={{ animationDelay: '0.1s' }}>
         <div className="d-flex justify-content-between align-items-center mb-4 px-2">
-            <div>
-                <h4 className="fw-bold mb-1" style={{color: 'var(--track-text)'}}>Track Your Shipment</h4>
-                <p className="text-muted mb-0">ID: <span className="fw-semibold text-dark">{order?.orderId || "Unknown"}</span></p>
-            </div>
-            {order?.orderId?.startsWith('ORD-') && (
-               <a 
-                 href={`${GLOBAL_API_URL}/order/invoice/invoice_${order.orderId.split('-').slice(0, 2).join('-')}.pdf`} 
-                 target="_blank" 
-                 rel="noreferrer" 
-                 className="btn btn-outline-primary rounded-pill fw-bold"
-               >
-                 <i className="bi bi-receipt me-2"></i>Invoice
-               </a>
-            )}
+          <div>
+            <h4 className="fw-bold mb-1" style={{ color: 'var(--track-text)' }}>Track Your Shipment</h4>
+            <p className="text-muted mb-0">ID: <span className="fw-semibold text-dark">{order?.orderId || "Unknown"}</span></p>
+          </div>
+          {order?.orderId?.startsWith('ORD-') && (
+            <a
+              href={`${GLOBAL_API_URL}/order/invoice/invoice_${order.orderId.split('-').slice(0, 2).join('-')}.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-outline-primary rounded-pill fw-bold"
+            >
+              <i className="bi bi-receipt me-2"></i>Invoice
+            </a>
+          )}
         </div>
       </div>
 
@@ -399,104 +399,104 @@ const Tracking = () => {
         <div className="premium-card">
           <h5 className="fw-bold mb-1">Status: <span className="text-primary">{steps[Math.min(completedCount === 0 ? 0 : completedCount - 1, 4)]?.label}</span></h5>
           <p className="text-muted small mb-0">
-             {completedCount >= 5 ? 'Your package has arrived safely!' : 'Your package is making its way to you.'}
+            {completedCount >= 5 ? 'Your package has arrived safely!' : 'Your package is making its way to you.'}
           </p>
-          
+
           <div className="stepper-wrapper">
-             <div className="stepper-bg-line"></div>
-             <div className="stepper-fill-line" style={{ '--fill-target': `${fillPercentage}%` }}>
-                 <style>{`
+            <div className="stepper-bg-line"></div>
+            <div className="stepper-fill-line" style={{ '--fill-target': `${fillPercentage}%` }}>
+              <style>{`
                     @keyframes fillLineHorizontal { 0% { width: 0; } 100% { width: ${fillPercentage}%; } }
                     @keyframes fillLineVertical { 0% { height: 0; } 100% { height: ${fillPercentage}%; } }
                  `}</style>
-             </div>
+            </div>
 
-             {steps.map((step, idx) => {
-                 const isCompleted = idx < completedCount;
-                 const isActive = idx === (completedCount === 0 ? 0 : completedCount - 1);
-                 
-                 let itemClass = "stepper-item";
-                 if (isCompleted && !isActive) itemClass += " completed";
-                 if (isActive) itemClass += " active completed";
+            {steps.map((step, idx) => {
+              const isCompleted = idx < completedCount;
+              const isActive = idx === (completedCount === 0 ? 0 : completedCount - 1);
 
-                 return (
-                     <div key={idx} className={itemClass} style={{ animationDelay: `${0.3 + (idx * 0.15)}s` }}>
-                         <div className="stepper-circle shadow-sm">
-                             <i className={`bi ${isCompleted ? step.icon : step.iconEmpty}`}></i>
-                         </div>
-                         <div className="stepper-label-wrapper">
-                             <div className="stepper-label">{step.label}</div>
-                             {step.dateStr && <div className="stepper-date d-none d-md-block text-center">{step.dateStr}</div>}
-                             {step.dateStr && <div className="stepper-date d-md-none text-start">{step.dateStr}</div>}
-                         </div>
-                     </div>
-                 )
-             })}
+              let itemClass = "stepper-item";
+              if (isCompleted && !isActive) itemClass += " completed";
+              if (isActive) itemClass += " active completed";
+
+              return (
+                <div key={idx} className={itemClass} style={{ animationDelay: `${0.3 + (idx * 0.15)}s` }}>
+                  <div className="stepper-circle shadow-sm">
+                    <i className={`bi ${isCompleted ? step.icon : step.iconEmpty}`}></i>
+                  </div>
+                  <div className="stepper-label-wrapper">
+                    <div className="stepper-label">{step.label}</div>
+                    {step.dateStr && <div className="stepper-date d-none d-md-block text-center">{step.dateStr}</div>}
+                    {step.dateStr && <div className="stepper-date d-md-none text-start">{step.dateStr}</div>}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
 
       <div className="container">
-          <div className="row">
-              {/* Product Info Card */}
-              <div className="col-lg-7 animate-stagger" style={{ animationDelay: '0.6s' }}>
-                  <div className="premium-card h-100">
-                      <h5 className="fw-bold mb-4 border-bottom pb-2">Item Details</h5>
-                      
-                      <div className="d-flex align-items-center mb-3">
-                          <div className="product-img-wrap me-3 border shadow-sm">
-                               <img 
-                                src={displayImage} 
-                                alt={productDetail?.name || 'Product'} 
-                                onError={(e) => { e.target.src = 'https://via.placeholder.com/80?text=No+Img'; }}
-                               />
-                          </div>
-                          <div className="flex-grow-1">
-                              <h6 className="fw-bold text-dark mb-1">{productDetail?.name || 'Product No Longer Available'}</h6>
-                              <div className="text-muted small mb-2">Quantity: <span className="fw-bold text-dark">{productDetail?.quantity || 1}</span></div>
-                              <h5 className="fw-bold text-success mb-0">₹{order?.totalAmt || order?.subTotalAmt || '0.00'}</h5>
-                          </div>
-                      </div>
-                  </div>
+        <div className="row">
+          {/* Product Info Card */}
+          <div className="col-lg-7 animate-stagger" style={{ animationDelay: '0.6s' }}>
+            <div className="premium-card h-100">
+              <h5 className="fw-bold mb-4 border-bottom pb-2">Item Details</h5>
+
+              <div className="d-flex align-items-center mb-3">
+                <div className="product-img-wrap me-3 border shadow-sm">
+                  <img
+                    src={displayImage}
+                    alt={productDetail?.name || 'Product'}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/80?text=No+Img'; }}
+                  />
+                </div>
+                <div className="flex-grow-1">
+                  <h6 className="fw-bold text-dark mb-1">{productDetail?.name || 'Product No Longer Available'}</h6>
+                  <div className="text-muted small mb-2">Quantity: <span className="fw-bold text-dark">{productDetail?.quantity || 1}</span></div>
+                  <h5 className="fw-bold text-success mb-0">₹{order?.totalAmt || order?.subTotalAmt || '0.00'}</h5>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Settings Card */}
+          <div className="col-lg-5 animate-stagger mt-3 mt-lg-0" style={{ animationDelay: '0.7s' }}>
+            <div className="premium-card h-100 bg-light">
+              <h5 className="fw-bold mb-4 border-bottom pb-2">Order Summary</h5>
+
+              <div className="d-flex justify-content-between mb-2">
+                <span className="text-muted">Payment Status</span>
+                <span className={`fw-bold ${order?.paymentStatus === 'Completed' || order?.paymentStatus === 'COD' || order?.paymentStatus === 'Paid' ? 'text-success' : 'text-warning'}`}>
+                  {order?.paymentStatus || 'Pending'}
+                </span>
+              </div>
+              <div className="d-flex justify-content-between mb-2">
+                <span className="text-muted">Order Date</span>
+                <span className="fw-bold text-dark">{new Date(order?.createdAt || Date.now()).toLocaleDateString()}</span>
               </div>
 
-              {/* Order Settings Card */}
-              <div className="col-lg-5 animate-stagger mt-3 mt-lg-0" style={{ animationDelay: '0.7s' }}>
-                  <div className="premium-card h-100 bg-light">
-                      <h5 className="fw-bold mb-4 border-bottom pb-2">Order Summary</h5>
-                      
-                      <div className="d-flex justify-content-between mb-2">
-                          <span className="text-muted">Payment Status</span>
-                          <span className={`fw-bold ${order?.paymentStatus === 'Completed' || order?.paymentStatus === 'COD' || order?.paymentStatus === 'Paid' ? 'text-success' : 'text-warning'}`}>
-                              {order?.paymentStatus || 'Pending'}
-                          </span>
-                      </div>
-                      <div className="d-flex justify-content-between mb-2">
-                          <span className="text-muted">Order Date</span>
-                          <span className="fw-bold text-dark">{new Date(order?.createdAt || Date.now()).toLocaleDateString()}</span>
-                      </div>
-                      
-                      {/* Only render Address Block if exists structurally safely */}
-                      {order?.deliveryAddress && (
-                          <div className="mt-4 pt-3 border-top">
-                              <h6 className="fw-bold text-dark mb-2">Shipping To</h6>
-                              <div className="small text-muted">
-                                  <div className="mb-1"><i className="bi bi-geo-alt-fill me-2"></i>{order.deliveryAddress.address_line || 'No address provided'}</div>
-                                  <div><i className="bi bi-telephone-fill me-2"></i>{order.deliveryAddress.mobile || 'No contact provided'}</div>
-                              </div>
-                          </div>
-                      )}
-
+              {/* Only render Address Block if exists structurally safely */}
+              {order?.deliveryAddress && (
+                <div className="mt-4 pt-3 border-top">
+                  <h6 className="fw-bold text-dark mb-2">Shipping To</h6>
+                  <div className="small text-muted">
+                    <div className="mb-1"><i className="bi bi-geo-alt-fill me-2"></i>{order.deliveryAddress.address_line || 'No address provided'}</div>
+                    <div><i className="bi bi-telephone-fill me-2"></i>{order.deliveryAddress.mobile || 'No contact provided'}</div>
                   </div>
-              </div>
+                </div>
+              )}
+
+            </div>
           </div>
-          
-          {/* Back Action */}
-          <div className="mt-4 animate-stagger" style={{ animationDelay: '0.9s' }}>
-              <Link to="/account/orders" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
-                  <i className="bi bi-arrow-left me-2"></i> Back to Orders
-              </Link>
-          </div>
+        </div>
+
+        {/* Back Action */}
+        <div className="mt-4 animate-stagger" style={{ animationDelay: '0.9s' }}>
+          <Link to="/account/orders" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
+            <i className="bi bi-arrow-left me-2"></i> Back to Orders
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -342,7 +342,7 @@ const CartView = () => {
         `${GLOBAL_API_URL}/cart/cart/${cartProductId}`,
         authConfig
       );
-      
+
       if (response.data.success) {
         fetchCartItems(); // Refresh cart items
         toast.success(response.data.message);
@@ -377,7 +377,7 @@ const CartView = () => {
     <>
       <style>{cartStyles}</style>
       <ToastContainer />
-      
+
       <div className="cart-header">
         <div className="container">
           <h1 className="cart-title">Your Shopping Cart</h1>
@@ -391,7 +391,7 @@ const CartView = () => {
               <i className="bi bi-cart-x"></i>
             </div>
             <h2 className="empty-cart-text">Your cart is empty</h2>
-            <Link to="" className="shop-now-btn">
+            <Link to="/" className="shop-now-btn">
               Start Shopping <i className="bi bi-arrow-right ms-2"></i>
             </Link>
           </div>
@@ -407,7 +407,7 @@ const CartView = () => {
                           This product is no longer available.
                         </div>
                         <div className="col-md-3 text-end">
-                          <button 
+                          <button
                             className="remove-btn"
                             onClick={() => handleRemoveItem(item._id)}
                             title="Remove item"
@@ -420,80 +420,81 @@ const CartView = () => {
                   );
                 }
                 return (
-                <div key={item._id} className="cart-item">
-                  <div className="row align-items-center">
-                    <div className="col-md-3">
-                      <img
-                        src={item?.productId?.images?.[0]?.startsWith('http') 
-                          ? item.productId.images[0] 
-                          : item?.productId?.images?.[0] ? `${GLOBAL_DOMAIN_URL}${item.productId.images[0]}` : 'https://via.placeholder.com/120'}
-                        className="product-image"
-                        alt={item?.productId?.name || 'Product'}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/120';
-                        }}
-                      />
-                    </div>
-                    <div className="col-md-9">
-                      <div className="row align-items-center">
-                        <div className="col-md-5">
-                          <Link
-                            to={`/product/${item?.productId?._id}`}
-                            className="product-name"
-                          >
-                            {item?.productId?.name || 'Unknown Product'}
-                          </Link>
-                          <p className="text-muted mb-0 small">
-                            {item?.productId?.description || 'No description available.'}
-                          </p>
-                        </div>
-                        <div className="col-md-3">
-                          <div className="quantity-control">
-                            <button
-                              className="quantity-btn"
-                              onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
+                  <div key={item._id} className="cart-item">
+                    <div className="row align-items-center">
+                      <div className="col-md-3">
+                        <img
+                          src={item?.productId?.images?.[0]?.startsWith('http')
+                            ? item.productId.images[0]
+                            : item?.productId?.images?.[0] ? `${GLOBAL_DOMAIN_URL}${item.productId.images[0]}` : 'https://via.placeholder.com/120'}
+                          className="product-image"
+                          alt={item?.productId?.name || 'Product'}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/120';
+                          }}
+                        />
+                      </div>
+                      <div className="col-md-9">
+                        <div className="row align-items-center">
+                          <div className="col-md-5">
+                            <Link
+                              to={`/product/${item?.productId?._id}`}
+                              className="product-name"
                             >
-                              <i className="bi bi-dash"></i>
-                            </button>
-                            <input
-                              type="text"
-                              className="quantity-input"
-                              value={item.quantity}
-                              readOnly
-                            />
+                              {item?.productId?.name || 'Unknown Product'}
+                            </Link>
+                            <p className="text-muted mb-0 small">
+                              {item?.productId?.description || 'No description available.'}
+                            </p>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="quantity-control">
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                                disabled={item.quantity <= 1}
+                              >
+                                <i className="bi bi-dash"></i>
+                              </button>
+                              <input
+                                type="text"
+                                className="quantity-input"
+                                value={item.quantity}
+                                readOnly
+                              />
+                              <button
+                                className="quantity-btn"
+                                onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                                disabled={item.quantity >= item.productId.stock}
+                              >
+                                <i className="bi bi-plus"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="price-tag">
+                              ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
+                            </div>
+                            <div className="unit-price">
+                              ${(item?.productId?.price || 0).toFixed(2)} each
+                            </div>
+                          </div>
+                          <div className="col-md-1">
                             <button
-                              className="quantity-btn"
-                              onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
-                              disabled={item.quantity >= item.productId.stock}
+                              className="remove-btn"
+                              onClick={() => handleRemoveItem(item._id)}
+                              title="Remove item"
                             >
-                              <i className="bi bi-plus"></i>
+                              <i className="bi bi-trash"></i>
                             </button>
                           </div>
-                        </div>
-                        <div className="col-md-3">
-                          <div className="price-tag">
-                            ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
-                          </div>
-                          <div className="unit-price">
-                            ${(item?.productId?.price || 0).toFixed(2)} each
-                          </div>
-                        </div>
-                        <div className="col-md-1">
-                          <button 
-                            className="remove-btn"
-                            onClick={() => handleRemoveItem(item._id)}
-                            title="Remove item"
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ); })}
+                );
+              })}
 
               <div className="delivery-info mt-4">
                 <i className="bi bi-truck"></i>
@@ -533,8 +534,8 @@ const CartView = () => {
                   <span>Total</span>
                   <span>${(totalPrice - discount).toFixed(2)}</span>
                 </div>
-                  {/* /checkout */}
-                <Link 
+                {/* /checkout */}
+                <Link
                   className="checkout-btn btn mt-4" to="/checkout"
                 >
                   Proceed to Checkout
