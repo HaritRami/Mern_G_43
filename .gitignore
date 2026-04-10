@@ -5,3 +5,8 @@
 /Backend/Backend.zip
 /Frontend/Frontend.zip
 /.vs
+*.zip
+*.rar
+.env
+.env.development
+.env.production

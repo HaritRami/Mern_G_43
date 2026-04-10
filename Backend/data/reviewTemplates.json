@@ -1,0 +1,515 @@
+[
+  {
+    "id": "tan09u1u",
+    "rating": 5,
+    "template": "Absolutely loved the {{product_name}}! 😍 I use it every single day and it's holding up amazingly. Snagging it with a {{discount}}% discount is just the cherry on top."
+  },
+  {
+    "id": "iwcad69w",
+    "rating": 5,
+    "template": "This {{product_name}} is just fantastic! 🔥 Honestly, I didn't expect it to be this good. Would rate it 10 stars if I could!"
+  },
+  {
+    "id": "favuaf6e",
+    "rating": 5,
+    "template": "I am completely blown away by this {{product_name}}. It's beautiful, practical, and highly functional. Grab it while you can on {{platform_name}}!"
+  },
+  {
+    "id": "alkvhqfi",
+    "rating": 5,
+    "template": "Hands down one of the best purchases I've ever made. 💯 The details on this thing are just insane. Got it at a great price on {{platform_name}}!"
+  },
+  {
+    "id": "t1dvnhma",
+    "rating": 5,
+    "template": "Wow, this {{category_name}} is top notch! Everything about it screams premium. Thanks {{platform_name}} for this awesome deal!"
+  },
+  {
+    "id": "2km0ah0r",
+    "rating": 5,
+    "template": "Highly recommend this {{product_name}} to anyone on the fence. It solves exactly what I needed it for effortlessly. Plus, the {{discount}}% discount made it a steal."
+  },
+  {
+    "id": "9v71x4sr",
+    "rating": 5,
+    "template": "Such an incredible {{product_name}}. Seriously flawless execution from start to finish. I'll definitely be buying more from {{platform_name}}."
+  },
+  {
+    "id": "cvuqu9uw",
+    "rating": 5,
+    "template": "The build quality of this {{product_name}} is exceptional. The quality is amazing and the performance is flawless. You can't beat this {{discount}}% off deal on {{platform_name}}."
+  },
+  {
+    "id": "5v7rzbp9",
+    "rating": 5,
+    "template": "Cannot express how happy I am with this {{category_name}}. Totally worth every rupee. Fast delivery by {{platform_name}} too! 🚀"
+  },
+  {
+    "id": "61coza26",
+    "rating": 5,
+    "template": "This {{product_name}} has exceeded all my expectations! It fits perfectly into my daily routine. Thanks for carrying this, {{platform_name}}."
+  },
+  {
+    "id": "izv9bzn4",
+    "rating": 5,
+    "template": "Absolutely loved the {{product_name}}! 😍 I use it every single day and it's holding up amazingly. Snagging it with a {{discount}}% discount is just the cherry on top."
+  },
+  {
+    "id": "wz7efem0",
+    "rating": 5,
+    "template": "This {{product_name}} is just fantastic! 🔥 Honestly, I didn't expect it to be this good. Would rate it 10 stars if I could!"
+  },
+  {
+    "id": "2iro6ckn",
+    "rating": 5,
+    "template": "I am completely blown away by this {{product_name}}. It's beautiful, practical, and highly functional. Grab it while you can on {{platform_name}}!"
+  },
+  {
+    "id": "7bhpprqz",
+    "rating": 5,
+    "template": "Hands down one of the best purchases I've ever made. 💯 The details on this thing are just insane. Got it at a great price on {{platform_name}}!"
+  },
+  {
+    "id": "mmj8j5dh",
+    "rating": 5,
+    "template": "Wow, this {{category_name}} is top notch! Everything about it screams premium. Thanks {{platform_name}} for this awesome deal!"
+  },
+  {
+    "id": "5mmmc2fl",
+    "rating": 5,
+    "template": "Highly recommend this {{product_name}} to anyone on the fence. It solves exactly what I needed it for effortlessly. Plus, the {{discount}}% discount made it a steal."
+  },
+  {
+    "id": "rxjbhdoa",
+    "rating": 5,
+    "template": "Such an incredible {{product_name}}. Seriously flawless execution from start to finish. I'll definitely be buying more from {{platform_name}}."
+  },
+  {
+    "id": "7sarow02",
+    "rating": 5,
+    "template": "The build quality of this {{product_name}} is exceptional. The quality is amazing and the performance is flawless. You can't beat this {{discount}}% off deal on {{platform_name}}."
+  },
+  {
+    "id": "qfbr1e9h",
+    "rating": 5,
+    "template": "Cannot express how happy I am with this {{category_name}}. Totally worth every rupee. Fast delivery by {{platform_name}} too! 🚀"
+  },
+  {
+    "id": "84lpg4ej",
+    "rating": 5,
+    "template": "This {{product_name}} has exceeded all my expectations! It fits perfectly into my daily routine. Thanks for carrying this, {{platform_name}}."
+  },
+  {
+    "id": "4jjidpjf",
+    "rating": 4,
+    "template": "Really good {{product_name}}. 👍 I do wish it had one or two extra features, but it's fine. {{platform_name}} delivered it perfectly."
+  },
+  {
+    "id": "xcdjexqq",
+    "rating": 4,
+    "template": "Solid {{category_name}} overall. Quality is definitely above average. Would buy from {{platform_name}} again."
+  },
+  {
+    "id": "parxltfl",
+    "rating": 4,
+    "template": "Happy with the purchase of this {{product_name}}. It feels sturdy and well-designed. At {{discount}}% off, it's a solid bargain."
+  },
+  {
+    "id": "n8k37top",
+    "rating": 4,
+    "template": "Good value for money. No major complaints, it gets the job done right. {{platform_name}}'s support was helpful too."
+  },
+  {
+    "id": "69pqs2hn",
+    "rating": 4,
+    "template": "This {{product_name}} is quite good. I'm enjoying using it regularly. Overall, a pleasant shopping experience on {{platform_name}}."
+  },
+  {
+    "id": "c6zzvfb9",
+    "rating": 4,
+    "template": "A very dependable {{category_name}}. Works as expected and the pricing is fair. Definitely worth checking out this deal."
+  },
+  {
+    "id": "dz48ual9",
+    "rating": 4,
+    "template": "Works exactly as expected. It handles everything I throw at it reasonably well. Serves its purpose well."
+  },
+  {
+    "id": "ixhypfn6",
+    "rating": 4,
+    "template": "Nice {{product_name}} for the price. The performance is stable and reliable. Thanks {{platform_name}} for a smooth transaction."
+  },
+  {
+    "id": "p7xbt3y6",
+    "rating": 4,
+    "template": "I really like this {{product_name}}. Not absolutely perfect, but very, very close. Happy with the purchase on {{platform_name}}!"
+  },
+  {
+    "id": "0hhum7k6",
+    "rating": 4,
+    "template": "A solid choice if you need a {{category_name}}. Setup was easy and usage is straightforward. The {{discount}}% discount was a nice touch."
+  },
+  {
+    "id": "gcauouf5",
+    "rating": 4,
+    "template": "Really good {{product_name}}. 👍 I do wish it had one or two extra features, but it's fine. {{platform_name}} delivered it perfectly."
+  },
+  {
+    "id": "wv5udwhc",
+    "rating": 4,
+    "template": "Solid {{category_name}} overall. Quality is definitely above average. Would buy from {{platform_name}} again."
+  },
+  {
+    "id": "yd0uvipj",
+    "rating": 4,
+    "template": "Happy with the purchase of this {{product_name}}. It feels sturdy and well-designed. At {{discount}}% off, it's a solid bargain."
+  },
+  {
+    "id": "spwz9nx4",
+    "rating": 4,
+    "template": "Good value for money. No major complaints, it gets the job done right. {{platform_name}}'s support was helpful too."
+  },
+  {
+    "id": "mrnfmkm7",
+    "rating": 4,
+    "template": "This {{product_name}} is quite good. I'm enjoying using it regularly. Overall, a pleasant shopping experience on {{platform_name}}."
+  },
+  {
+    "id": "drcf2hom",
+    "rating": 4,
+    "template": "A very dependable {{category_name}}. Works as expected and the pricing is fair. Definitely worth checking out this deal."
+  },
+  {
+    "id": "t9xwzmog",
+    "rating": 4,
+    "template": "Works exactly as expected. It handles everything I throw at it reasonably well. Serves its purpose well."
+  },
+  {
+    "id": "uprk7o3i",
+    "rating": 4,
+    "template": "Nice {{product_name}} for the price. The performance is stable and reliable. Thanks {{platform_name}} for a smooth transaction."
+  },
+  {
+    "id": "jb0b7s9w",
+    "rating": 4,
+    "template": "I really like this {{product_name}}. Not absolutely perfect, but very, very close. Happy with the purchase on {{platform_name}}!"
+  },
+  {
+    "id": "6eotay20",
+    "rating": 4,
+    "template": "A solid choice if you need a {{category_name}}. Setup was easy and usage is straightforward. The {{discount}}% discount was a nice touch."
+  },
+  {
+    "id": "cxcdelga",
+    "rating": 3,
+    "template": "It's a decent {{product_name}}. I see the potential here, but a few tweaks would make it flawless. Not bad for the price, especially with the {{discount}}% discount."
+  },
+  {
+    "id": "8uzsxv9s",
+    "rating": 3,
+    "template": "This {{category_name}} is okay. It meets the basic requirements, but lacks premium feel. Thank you {{platform_name}} for the fast delivery at least."
+  },
+  {
+    "id": "cskvow0p",
+    "rating": 3,
+    "template": "Good, but could be better. A solid foundation, but the experience could be slightly better. Still, grabbing it at {{discount}}% off on {{platform_name}} makes it worth considering."
+  },
+  {
+    "id": "09qrbj1m",
+    "rating": 3,
+    "template": "An alright {{product_name}}. It does the job, though I've seen better. I hope the manufacturer improves the next version."
+  },
+  {
+    "id": "u1p89ik5",
+    "rating": 3,
+    "template": "Fair value for money. It works, but there's definitely room for a bit more refinement. {{platform_name}} makes the shopping experience smooth, so I'm still relatively happy."
+  },
+  {
+    "id": "arr13t51",
+    "rating": 3,
+    "template": "It's a decent {{product_name}}. I see the potential here, but a few tweaks would make it flawless. Not bad for the price, especially with the {{discount}}% discount."
+  },
+  {
+    "id": "ejrt7mkj",
+    "rating": 3,
+    "template": "This {{category_name}} is okay. It meets the basic requirements, but lacks premium feel. Thank you {{platform_name}} for the fast delivery at least."
+  },
+  {
+    "id": "u8huvski",
+    "rating": 3,
+    "template": "Good, but could be better. A solid foundation, but the experience could be slightly better. Still, grabbing it at {{discount}}% off on {{platform_name}} makes it worth considering."
+  },
+  {
+    "id": "g84rlfjx",
+    "rating": 3,
+    "template": "An alright {{product_name}}. It does the job, though I've seen better. I hope the manufacturer improves the next version."
+  },
+  {
+    "id": "twquzy42",
+    "rating": 3,
+    "template": "Fair value for money. It works, but there's definitely room for a bit more refinement. {{platform_name}} makes the shopping experience smooth, so I'm still relatively happy."
+  },
+  
+  {
+    "id": "rev101",
+    "rating": 5,
+    "template": "Not gonna lie, the {{product_name}} actually exceeded my expectations big time. I’ve tried similar {{category_name}} products before, but this one just hits different. The quality, the feel, everything is on point. Grabbed it from {{platform_name}} with a {{discount}}% discount and honestly, it feels like a steal. If you’re thinking about it, just go for it."
+  },
+  {
+    "id": "rev102",
+    "rating": 5,
+    "template": "Bro, the {{product_name}} is totally worth it. I wasn’t expecting much at first, but after using it, I can confidently say it’s one of the best in the {{category_name}} category. Got it from {{platform_name}} at {{discount}}% off, and I’d 100% recommend grabbing it before the price goes up."
+  },
+  {
+    "id": "rev103",
+    "rating": 5,
+    "template": "Honestly, I’m super impressed with the {{product_name}}. The build quality and performance are way better than I expected for this price range. Buying it from {{platform_name}} with a {{discount}}% discount made it feel like an absolute win."
+  },
+  {
+    "id": "rev104",
+    "rating": 5,
+    "template": "If you’re scrolling and confused, just stop here and buy the {{product_name}}. It’s easily one of the most reliable {{category_name}} items I’ve used. Got it on {{platform_name}} with {{discount}}% off and it’s been worth every rupee."
+  },
+  {
+    "id": "rev105",
+    "rating": 5,
+    "template": "I usually don’t write reviews, but the {{product_name}} deserves it. Everything from packaging to performance feels premium. Thanks to {{platform_name}} and the {{discount}}% deal, this turned out to be one of my smartest purchases."
+  },
+
+  {
+    "id": "rev106",
+    "rating": 5,
+    "template": "Bro seriously, don’t overthink it. The {{product_name}} is solid. Been using it daily and it still feels brand new. Got it from {{platform_name}} at {{discount}}% off and honestly, it’s a no-brainer deal."
+  },
+  {
+    "id": "rev107",
+    "rating": 5,
+    "template": "The {{product_name}} is just perfect for anyone looking in the {{category_name}} category. It’s smooth, reliable, and looks great too. Grabbed it from {{platform_name}} with a {{discount}}% discount and couldn’t be happier."
+  },
+  {
+    "id": "rev108",
+    "rating": 5,
+    "template": "I’ve been using the {{product_name}} for a while now and it hasn’t disappointed me once. The quality is top-notch and it performs exactly as promised. Buying it from {{platform_name}} at {{discount}}% off was a great move."
+  },
+  {
+    "id": "rev109",
+    "rating": 5,
+    "template": "Lowkey one of the best purchases I’ve made recently. The {{product_name}} fits perfectly in the {{category_name}} segment and delivers amazing results. Got it from {{platform_name}} with {{discount}}% off, and yeah, totally worth it."
+  },
+  {
+    "id": "rev110",
+    "rating": 5,
+    "template": "Not even exaggerating, the {{product_name}} is a game changer. If you’re into {{category_name}}, this is something you shouldn’t miss. The {{discount}}% deal on {{platform_name}} just makes it even better."
+  },
+
+  {
+    "id": "rev111",
+    "rating": 5,
+    "template": "The {{product_name}} completely surprised me in a good way. The performance, durability, and overall experience are excellent. Got it from {{platform_name}} at {{discount}}% discount and I’d definitely recommend it to others."
+  },
+  {
+    "id": "rev112",
+    "rating": 5,
+    "template": "Okay but this {{product_name}} is actually fire 🔥. Didn’t expect this level of quality in the {{category_name}} category. Got it on {{platform_name}} with {{discount}}% off and I’d buy it again without thinking twice."
+  },
+  {
+    "id": "rev113",
+    "rating": 5,
+    "template": "If you're still deciding, just go for the {{product_name}}. It’s reliable, well-built, and does exactly what it promises. The {{discount}}% discount on {{platform_name}} makes it a great deal."
+  },
+  {
+    "id": "rev114",
+    "rating": 5,
+    "template": "Been using the {{product_name}} daily and I’m genuinely impressed. It’s durable and performs consistently well. Buying it from {{platform_name}} at {{discount}}% off was definitely worth it."
+  },
+  {
+    "id": "rev115",
+    "rating": 5,
+    "template": "The {{product_name}} is honestly underrated. It performs better than many expensive options in the {{category_name}} category. Got it from {{platform_name}} with a {{discount}}% discount and it’s a steal."
+  },
+
+  {
+    "id": "rev116",
+    "rating": 5,
+    "template": "Bro I’m telling you, the {{product_name}} is worth every penny. The quality is insane for this price range. Grabbed it from {{platform_name}} with {{discount}}% off and I’d recommend it to everyone."
+  },
+  {
+    "id": "rev117",
+    "rating": 5,
+    "template": "I did a lot of research before buying the {{product_name}}, and it totally paid off. It’s one of the best options in the {{category_name}} segment. The {{discount}}% discount on {{platform_name}} made it even better."
+  },
+  {
+    "id": "rev118",
+    "rating": 5,
+    "template": "Super satisfied with the {{product_name}}. It’s well-designed and performs beyond expectations. Thanks to {{platform_name}} for offering it at {{discount}}% off."
+  },
+  {
+    "id": "rev119",
+    "rating": 5,
+    "template": "The {{product_name}} is exactly what I was looking for. It’s efficient, reliable, and looks premium. Got it from {{platform_name}} at {{discount}}% discount, so no regrets at all."
+  },
+  {
+    "id": "rev120",
+    "rating": 5,
+    "template": "Honestly, this {{product_name}} just makes life easier. Everything works smoothly and feels high quality. The {{discount}}% deal on {{platform_name}} was just the cherry on top."
+  },
+
+  {
+    "id": "rev121",
+    "rating": 5,
+    "template": "Not gonna lie, I was a bit skeptical before buying the {{product_name}}, but it turned out amazing. Works perfectly and feels durable. Got it from {{platform_name}} with {{discount}}% off and it’s totally worth it."
+  },
+  {
+    "id": "rev122",
+    "rating": 5,
+    "template": "The {{product_name}} is straight up value for money. If you’re browsing {{category_name}} items, this is a must-buy. The {{discount}}% discount on {{platform_name}} makes it even more attractive."
+  },
+  {
+    "id": "rev123",
+    "rating": 5,
+    "template": "This {{product_name}} exceeded all my expectations. The build quality is solid and it performs flawlessly. Buying it from {{platform_name}} at {{discount}}% off was a great decision."
+  },
+  {
+    "id": "rev124",
+    "rating": 5,
+    "template": "Lowkey obsessed with the {{product_name}} right now. It’s stylish, efficient, and totally worth the hype. Got it from {{platform_name}} with {{discount}}% off."
+  },
+  {
+    "id": "rev125",
+    "rating": 5,
+    "template": "The {{product_name}} is just perfect for everyday use. It’s reliable and easy to use. The {{discount}}% deal on {{platform_name}} makes it a no-brainer."
+  },
+
+  {
+    "id": "rev126",
+    "rating": 5,
+    "template": "Bro trust me, just buy the {{product_name}} already. I’ve been using it non-stop and it hasn’t disappointed me once. Got it from {{platform_name}} at {{discount}}% off and it’s a steal."
+  },
+  {
+    "id": "rev127",
+    "rating": 5,
+    "template": "The {{product_name}} stands out in the {{category_name}} category for its performance and quality. Purchasing it from {{platform_name}} with {{discount}}% off was a great deal."
+  },
+  {
+    "id": "rev128",
+    "rating": 5,
+    "template": "Really impressed with how well the {{product_name}} works. It’s reliable and feels premium. The {{discount}}% discount on {{platform_name}} made it even better."
+  },
+  {
+    "id": "rev129",
+    "rating": 5,
+    "template": "The {{product_name}} is honestly one of the best things I’ve bought online. Works perfectly and looks great too. Got it from {{platform_name}} at {{discount}}% off."
+  },
+  {
+    "id": "rev130",
+    "rating": 5,
+    "template": "If you want something reliable in the {{category_name}} category, go for the {{product_name}}. The {{discount}}% discount on {{platform_name}} makes it a great value."
+  },
+
+  {
+    "id": "rev131",
+    "rating": 5,
+    "template": "The {{product_name}} is a solid purchase. It delivers great performance and feels durable. Buying it from {{platform_name}} with {{discount}}% off was totally worth it."
+  },
+  {
+    "id": "rev132",
+    "rating": 5,
+    "template": "No regrets buying the {{product_name}}. It’s efficient, well-built, and worth every penny. Got it from {{platform_name}} at {{discount}}% discount."
+  },
+  {
+    "id": "rev133",
+    "rating": 5,
+    "template": "The {{product_name}} is just amazing. It’s easy to use and performs really well. The {{discount}}% deal on {{platform_name}} made it even more appealing."
+  },
+  {
+    "id": "rev134",
+    "rating": 5,
+    "template": "Honestly, the {{product_name}} is a must-have in the {{category_name}} category. The quality and performance are top-notch. Got it from {{platform_name}} with {{discount}}% off."
+  },
+  {
+    "id": "rev135",
+    "rating": 5,
+    "template": "Super happy with the {{product_name}}. It’s reliable and worth the price. The {{discount}}% discount on {{platform_name}} makes it a great deal."
+  },
+
+  {
+    "id": "rev136",
+    "rating": 5,
+    "template": "Bro this {{product_name}} is actually insane for the price. Didn’t expect it to be this good. Got it from {{platform_name}} with {{discount}}% off and yeah, totally worth it."
+  },
+  {
+    "id": "rev137",
+    "rating": 5,
+    "template": "The {{product_name}} performs exactly as described and even better. It’s durable and efficient. Purchasing it from {{platform_name}} at {{discount}}% off was a great choice."
+  },
+  {
+    "id": "rev138",
+    "rating": 5,
+    "template": "Really glad I bought the {{product_name}}. It’s practical and works perfectly. The {{discount}}% deal on {{platform_name}} makes it a smart buy."
+  },
+  {
+    "id": "rev139",
+    "rating": 5,
+    "template": "The {{product_name}} is worth every penny. It’s well-built and performs consistently. Got it from {{platform_name}} at {{discount}}% discount."
+  },
+  {
+    "id": "rev140",
+    "rating": 5,
+    "template": "If you’re looking for quality in the {{category_name}} category, the {{product_name}} is a great choice. The {{discount}}% discount on {{platform_name}} makes it even better."
+  },
+
+  {
+    "id": "rev141",
+    "rating": 5,
+    "template": "The {{product_name}} is one of the best purchases I’ve made recently. It’s reliable and efficient. Buying it from {{platform_name}} with {{discount}}% off was worth it."
+  },
+  {
+    "id": "rev142",
+    "rating": 5,
+    "template": "Absolutely love the {{product_name}}. It’s stylish, functional, and worth every penny. Got it from {{platform_name}} at {{discount}}% discount."
+  },
+  {
+    "id": "rev143",
+    "rating": 5,
+    "template": "The {{product_name}} exceeded my expectations in every way. It’s durable and performs well. The {{discount}}% deal on {{platform_name}} makes it a great buy."
+  },
+  {
+    "id": "rev144",
+    "rating": 5,
+    "template": "Not gonna lie, the {{product_name}} is actually worth the hype. It performs really well and feels premium. Got it from {{platform_name}} with {{discount}}% off."
+  },
+  {
+    "id": "rev145",
+    "rating": 5,
+    "template": "The {{product_name}} is a must-buy if you’re in the {{category_name}} category. The quality and performance are excellent. Buying it from {{platform_name}} at {{discount}}% off was a great deal."
+  },
+
+  {
+    "id": "rev146",
+    "rating": 5,
+    "template": "Bro just go for the {{product_name}}. It’s reliable, efficient, and worth every rupee. Got it from {{platform_name}} with {{discount}}% off and no regrets."
+  },
+  {
+    "id": "rev147",
+    "rating": 5,
+    "template": "The {{product_name}} is a fantastic product. It works perfectly and feels high quality. The {{discount}}% discount on {{platform_name}} makes it even better."
+  },
+  {
+    "id": "rev148",
+    "rating": 5,
+    "template": "Really impressed with the {{product_name}}. It delivers great performance and value. Got it from {{platform_name}} at {{discount}}% discount."
+  },
+  {
+    "id": "rev149",
+    "rating": 5,
+    "template": "The {{product_name}} is one of the best in the {{category_name}} category. It’s reliable and well-built. Buying it from {{platform_name}} with {{discount}}% off was worth it."
+  },
+  {
+    "id": "rev150",
+    "rating": 5,
+    "template": "Honestly, the {{product_name}} is a great deal for the price. It performs well and feels premium. The {{discount}}% offer on {{platform_name}} makes it a must-buy."
+  }
+]
+
+
+

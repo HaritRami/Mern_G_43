@@ -55,6 +55,20 @@ const productSchema = new mongoose.Schema({
         type: String,
         default: () => nanoid(10),
         unique: true
+    },
+    // ─── Review Aggregates ────────────────────────────────────────────────────
+    // Denormalised for fast reads. Recalculated whenever a review is added/
+    // updated/deleted by the review controller.
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+    },
+    totalReviews: {
+        type: Number,
+        default: 0,
+        min: 0
     }
 }, {
     timestamps: true

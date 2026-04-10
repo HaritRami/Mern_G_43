@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProductReviews, { StarDisplay } from '../../components/ProductReviews';
 
 const ProductDetailView = () => {
   const [loading, setLoading] = useState(true);
@@ -201,11 +202,15 @@ const ProductDetailView = () => {
     const primaryImg = product.images?.[0] ? (product.images[0].startsWith('http') ? product.images[0] : `${GLOBAL_DOMAIN_URL}${product.images[0]}`) : '/NO_IMG.png';
     return (
       <div
-        className="product-hover-card"
+        className={`product-hover-card ${product.averageRating >= 4 && product.discount > 0 ? 'ai-recommended-glow' : ''}`}
         onClick={() => navigate(`/product/${product._id}`)}
       >
         <div className="image-container">
-          {product.discount > 0 && <span className="discount-badge">{product.discount}% OFF</span>}
+          {product.averageRating >= 4 && product.discount > 0 ? (
+            <span className="discount-badge ai-pick-badge"> AI Pick</span>
+          ) : product.discount > 0 ? (
+            <span className="discount-badge">{product.discount}% OFF</span>
+          ) : null}
           <img
             src={primaryImg}
             className="product-card-img"
@@ -228,10 +233,12 @@ const ProductDetailView = () => {
           </h3>
           <div className="product-price-row mt-auto">
             <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
-            <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
-              <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
-              <span className="small fw-bold text-dark">4.9</span>
-            </div>
+            {product.averageRating > 0 && (
+              <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
+                <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
+                <span className="small fw-bold text-dark">{product.averageRating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -588,6 +595,37 @@ const ProductDetailView = () => {
       background: linear-gradient(90deg, #667eea, #764ba2);
       border-radius: 2px;
     }
+
+    /* AI Recommendation Specifics */
+    .ai-pick-badge {
+      background: linear-gradient(135deg, #8b5cf6, #c084fc);
+      box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+    }
+    .ai-recommended-glow {
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      position: relative;
+    }
+    .ai-recommended-glow::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      background: linear-gradient(45deg, #8b5cf6, transparent, #c084fc, transparent);
+      z-index: -1;
+      border-radius: 22px;
+      animation: glowing 3s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .ai-recommended-glow:hover::before {
+      opacity: 1;
+    }
+    @keyframes glowing {
+      0% { filter: blur(4px); }
+      50% { filter: blur(8px); }
+      100% { filter: blur(4px); }
+    }
   `;
 
   return (
@@ -663,14 +701,19 @@ const ProductDetailView = () => {
                 <h1 className="detail-title">{selectedProduct.name}</h1>
                 
                 <div className="d-flex align-items-center gap-3 mt-3">
-                  <div className="d-flex text-warning fs-5">
-                    <i className="bi bi-star-fill"></i>
-                    <i className="bi bi-star-fill"></i>
-                    <i className="bi bi-star-fill"></i>
-                    <i className="bi bi-star-fill"></i>
-                    <i className="bi bi-star-half"></i>
-                  </div>
-                  <span className="text-muted fw-medium">(128 reviews)</span>
+                  {selectedProduct.averageRating > 0 ? (
+                    <>
+                      <StarDisplay rating={selectedProduct.averageRating} size="lg" />
+                      <span className="fw-bold fs-5">{selectedProduct.averageRating.toFixed(1)}</span>
+                    </>
+                  ) : (
+                    <StarDisplay rating={0} size="lg" />
+                  )}
+                  <span className="text-muted fw-medium">
+                    {selectedProduct.totalReviews > 0
+                      ? `(${selectedProduct.totalReviews} ${selectedProduct.totalReviews === 1 ? 'review' : 'reviews'})`
+                      : '(No reviews yet)'}
+                  </span>
                 </div>
               </div>
 
@@ -742,7 +785,9 @@ const ProductDetailView = () => {
         {/* Similar Products */}
         {relatedProducts.length > 0 && (
           <div className="mb-5 pt-4">
-            <h2 className="section-title">Similar Items You'll Love</h2>
+            <h2 className="section-title text-dark">
+               <span style={{color: '#8b5cf6'}}></span> AI Recommended for You
+            </h2>
             <div className="row g-4">
               {relatedProducts.map((product) => (
                 <div key={product._id} className="col-12 col-sm-6 col-lg-3">
@@ -752,6 +797,16 @@ const ProductDetailView = () => {
             </div>
           </div>
         )}
+
+        {/* ── Reviews Section ─────────────────────────────────────────────── */}
+        <div className="premium-container mb-5">
+          <ProductReviews 
+            productId={selectedProduct._id} 
+            productName={selectedProduct.name}
+            discount={selectedProduct.discount}
+            category={selectedProduct.category}
+          />
+        </div>
 
         {/* Recently Viewed */}
         {recentlyViewed.length > 1 && (

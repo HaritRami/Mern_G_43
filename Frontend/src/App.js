@@ -61,6 +61,7 @@ const AdminV2Orders = lazy(() => import("./admin/v2/pages/Orders"));
 const AdminV2Profile = lazy(() => import("./admin/v2/pages/Profile"));
 const AdminV2Settings = lazy(() => import("./admin/v2/pages/Settings"));
 const AdminV2Coupons = lazy(() => import("./admin/v2/pages/Coupons"));
+const AdminV2Templates = lazy(() => import("./admin/v2/pages/ReviewTemplates"));
 // Layout component that includes Header, TopMenu, and Footer
 const Layout = ({ children }) => (
   <React.Fragment>
@@ -135,6 +136,7 @@ function App() {
               <Route path="/admin/profile" element={<AdminV2Layout><AdminV2Profile /></AdminV2Layout>} />
               <Route path="/admin/settings" element={<AdminV2Layout><AdminV2Settings /></AdminV2Layout>} />
               <Route path="/admin/coupons" element={<AdminV2Layout><AdminV2Coupons /></AdminV2Layout>} />
+              <Route path="/admin/templates" element={<AdminV2Layout><AdminV2Templates /></AdminV2Layout>} />
 
               <Route
                 path="/product/:productId"

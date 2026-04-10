@@ -10,6 +10,7 @@ const navItems = [
     { to: "/admin/sellers", icon: "bi-shop", label: "Sellers" },
     { to: "/admin/orders", icon: "bi-basket", label: "Orders" },
     { to: "/admin/coupons", icon: "bi-ticket-perforated", label: "Coupons" },
+    { to: "/admin/templates", icon: "bi-robot", label: "AI Templates" },
     //{ to: "/admin/settings", icon: "bi-gear", label: "Settings" },
 ];
 

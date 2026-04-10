@@ -7,7 +7,7 @@ const AdminDashboard = ({ children }) => {
   const { isAuthenticated, user, logout } = useUser();
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}user/logout`, {
+      const response = await fetch(`/api/user/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -63,7 +63,7 @@ const AdminDashboard = ({ children }) => {
             <li className="nav-item dropdown pe-3">
               <a className="nav-link nav-profile d-flex align-items-center" href="#" data-bs-toggle="dropdown">
                 <img
-                  src={savedUser?.avatar ? `http://localhost:5000${savedUser.avatar}` : "assets/img/profile-img.jpg"}
+                  src={savedUser?.avatar ? savedUser.avatar : "assets/img/profile-img.jpg"}
                   alt="Profile"
                   className="rounded-circle"
                   style={{ width: "36px", height: "36px", objectFit: "cover" }}
@@ -74,7 +74,7 @@ const AdminDashboard = ({ children }) => {
                 <li className="dropdown-header text-center">
                   <div className="d-flex flex-column align-items-center">
                     <img
-                      src={savedUser?.avatar ? `http://localhost:5000${savedUser.avatar}` : "assets/img/profile-img.jpg"}
+                      src={savedUser?.avatar ? savedUser.avatar : "assets/img/profile-img.jpg"}
                       alt="Profile"
                       className="rounded-circle mb-2"
                       style={{ width: "64px", height: "64px", objectFit: "cover" }}

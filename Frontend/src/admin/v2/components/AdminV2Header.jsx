@@ -8,7 +8,7 @@ const AdminV2Header = () => {
 
     const handleLogout = async () => {
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}user/logout`, {
+            const response = await fetch(`/api/user/logout`, {
                 method: "POST",
                 credentials: "include",
             });
@@ -61,7 +61,7 @@ const AdminV2Header = () => {
                                 <img
                                     src={
                                         savedUser?.avatar
-                                            ? `http://localhost:5000${savedUser.avatar}`
+                                            ? savedUser.avatar
                                             : "assets/img/profile-img.jpg"
                                     }
                                     alt="Profile"
@@ -78,7 +78,7 @@ const AdminV2Header = () => {
                                         <img
                                             src={
                                                 savedUser?.avatar
-                                                    ? `http://localhost:5000${savedUser.avatar}`
+                                                    ? savedUser.avatar
                                                     : "assets/img/profile-img.jpg"
                                             }
                                             alt="Profile"

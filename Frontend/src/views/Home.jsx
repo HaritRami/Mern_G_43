@@ -17,21 +17,28 @@ const Banner = lazy(() => import("../components/carousel/Banner"));
 const HomeView = () => {
   const [categories, setCategories] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
+  const [topRatedProducts, setTopRatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
+        const [catRes, prodRes, topRatedRes] = await Promise.all([
           axios.get(`${GLOBAL_API_URL}/category`),
-          axios.get(`${GLOBAL_API_URL}/product?limit=4&sortField=createdAt&sortOrder=desc`) 
+          axios.get(`${GLOBAL_API_URL}/product?limit=4&sortField=createdAt&sortOrder=desc`),
+          axios.get(`${GLOBAL_API_URL}/product?limit=4&sortField=averageRating&sortOrder=desc`)
         ]);
         
         if (catRes.data.success) {
-          setCategories(catRes.data.data.slice(0, 8)); // Top 8 categories
+          setCategories(catRes.data.data.slice(0, 8));
         }
         if (prodRes.data.success) {
           setTrendingProducts(prodRes.data.data.slice(0, 4));
+        }
+        if (topRatedRes.data.success) {
+          // Only show products that have at least 1 review
+          const rated = topRatedRes.data.data.filter(p => p.totalReviews > 0).slice(0, 4);
+          setTopRatedProducts(rated);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -161,9 +168,9 @@ const HomeView = () => {
                       <h3 className="product-title text-truncate">{product.name}</h3>
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="product-price">${product.price.toFixed(2)}</span>
-                        <div className="text-warning">
+                        <div className="text-warning d-flex align-items-center gap-1">
                            <IconStarFill width={14} height={14} className="me-1" />
-                           <span className="text-dark fw-bold small">4.9</span>
+                           <span className="text-dark fw-bold small">{product.averageRating > 0 ? product.averageRating.toFixed(1) : "-"}</span>
                         </div>
                       </div>
                     </div>
@@ -177,6 +184,54 @@ const HomeView = () => {
           </div>
         </div>
       </section>
+
+      {/* ── Top Rated Products ─────────────────────────────────────────────── */}
+      {topRatedProducts.length > 0 && (
+        <section className="trending-section">
+          <div className="container">
+            <div className="text-center mb-5 animate-fade-in-up">
+              <h2 className="section-title">⭐ Top Rated Products</h2>
+              <p className="section-subtitle">
+                Loved by our customers — highest rated items in our store
+              </p>
+            </div>
+            <div className="row g-4">
+              {topRatedProducts.map((product, index) => (
+                <div className={`col-sm-6 col-md-4 col-lg-3 animate-fade-in-up delay-${(index + 1) * 100}`} key={product._id}>
+                  <Link to={`/product/${product._id}`} className="text-decoration-none">
+                    <div className="product-card">
+                      <span className="product-badge" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>Top Rated</span>
+                      <div className="product-image-container">
+                        <img
+                          src={product.images && product.images[0] ? (product.images[0].startsWith('http') ? product.images[0] : `${GLOBAL_DOMAIN_URL}${product.images[0]}`) : "https://via.placeholder.com/300x400?text=Product"}
+                          alt={product.name}
+                        />
+                        <div className="product-overlay">
+                          <button className="product-add-btn">View Details</button>
+                        </div>
+                      </div>
+                      <div className="product-info">
+                        <h3 className="product-title text-truncate">{product.name}</h3>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="product-price">${product.price.toFixed(2)}</span>
+                          <div className="text-warning d-flex align-items-center gap-1">
+                            <IconStarFill width={14} height={14} />
+                            <span className="text-dark fw-bold small">{product.averageRating.toFixed(1)}</span>
+                            <span className="text-muted" style={{ fontSize: '0.75rem' }}>({product.totalReviews})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-5 animate-fade-in-up delay-400">
+              <Link to="/products" className="btn btn-outline-dark rounded-pill px-4 py-2 fw-bold shadow-sm">View All Products <i className="bi bi-arrow-right ms-2"></i></Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Parallax Banner */}
       <section className="parallax-section animate-fade-in-up">
