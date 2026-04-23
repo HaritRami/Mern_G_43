@@ -30,6 +30,18 @@ export const UserProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
+    // ── updateUser: call this after any profile mutation ─────────────────────────────
+    // Merges partialData into the current user, updates context state
+    // AND localStorage simultaneously so all consumers see new data.
+    const updateUser = (partialData) => {
+        setUser(prev => {
+            const merged = { ...prev, ...partialData };
+            localStorage.setItem('user', JSON.stringify(merged));
+            console.log('[UserContext] updateUser called. Updated user:', merged);
+            return merged;
+        });
+    };
+
     const logout = () => {
         setUser(null);
         setIsAuthenticated(false);
@@ -44,7 +56,7 @@ export const UserProvider = ({ children }) => {
     };
 
     return (
-        <UserContext.Provider value={{ user, isAuthenticated, login, logout }}>
+        <UserContext.Provider value={{ user, isAuthenticated, login, logout, updateUser }}>
             {children}
         </UserContext.Provider>
     );

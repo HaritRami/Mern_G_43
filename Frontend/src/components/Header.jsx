@@ -57,20 +57,10 @@ const headerStyles = `
 const Header = () => {
   const { isAuthenticated, user, logout } = useUser();
 
-  // Function to check if user exists in localStorage
+  // checkAccessToken: prefer context isAuthenticated, fall back to localStorage presence
   const checkAccessToken = () => {
-    return localStorage.getItem('user') ? true : false;
+    return isAuthenticated || !!localStorage.getItem('user');
   };
-
-  const getActiveUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem('user')) || user;
-    } catch {
-      return user;
-    }
-  };
-
-  const activeUser = getActiveUser();
 
   const handleLogout = async () => {
     try {
@@ -143,15 +133,15 @@ const Header = () => {
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                   >
-                    {activeUser?.avatar ? (
+                    {user?.avatar ? (
                       <img
-                        src={`${GLOBAL_API_URL.replace('/api', '')}${activeUser.avatar}`}
+                        src={`${GLOBAL_API_URL.replace('/api', '')}${user.avatar}?t=${user._avatarVersion || ''}`}
                         alt="Profile"
                         className="w-100 h-100 object-fit-cover"
                         onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
                       />
                     ) : null}
-                    <i className="bi bi-person-fill fs-5 text-secondary" style={{ display: activeUser?.avatar ? 'none' : 'block' }}></i>
+                    <i className="bi bi-person-fill fs-5 text-secondary" style={{ display: user?.avatar ? 'none' : 'block' }}></i>
                   </button>
 
                   <ul className="dropdown-menu dropdown-menu-end mt-2 animate slideIn" aria-labelledby="userDropdown">
@@ -159,7 +149,7 @@ const Header = () => {
                       <Link className="dropdown-item d-flex align-items-center" to="/account/profile">
                         <i className="bi bi-person-circle fs-5 me-3 text-secondary"></i>
                         <span className="text-truncate" style={{ maxWidth: '150px' }}>
-                          {activeUser?.name || 'My Profile'}
+                          {user?.name || 'My Profile'}
                         </span>
                       </Link>
                     </li>

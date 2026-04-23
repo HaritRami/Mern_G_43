@@ -21,7 +21,7 @@ const FilterPrice = (props) => {
               id="flexCheckDefault1"
             />
             <label className="form-check-label" htmlFor="flexCheckDefault1">
-              $24.00 - $29.00 <span className="text-muted">(4)</span>
+              ₹1,750 - ₹2,100 <span className="text-muted">(4)</span>
             </label>
           </div>
         </li>
@@ -33,7 +33,7 @@ const FilterPrice = (props) => {
               id="flexCheckDefault2"
             />
             <label className="form-check-label" htmlFor="flexCheckDefault2">
-              $33.00 - $35.00 <span className="text-muted">(2)</span>
+              ₹2,400 - ₹2,550 <span className="text-muted">(2)</span>
             </label>
           </div>
         </li>
@@ -45,7 +45,7 @@ const FilterPrice = (props) => {
               id="flexCheckDefault3"
             />
             <label className="form-check-label" htmlFor="flexCheckDefault3">
-              $70.00 - $99.00 <span className="text-muted">(5)</span>
+              ₹5,100 - ₹7,200 <span className="text-muted">(5)</span>
             </label>
           </div>
         </li>

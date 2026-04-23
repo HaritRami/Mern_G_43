@@ -1,12 +1,16 @@
 import ReviewModel from '../models/review.model.js';
 import ProductModel from '../models/product.model.js';
+import mongoose from 'mongoose';
 
 // ─── Helper: Recalculate and persist product rating aggregates ────────────────
 // Called after every create / update / delete to keep averageRating + totalReviews
 // in sync. Uses MongoDB aggregation for accurate floating-point math.
 const recalculateProductRating = async (productId) => {
+  // Cast to ObjectId so the $match works correctly regardless of whether
+  // productId arrives as a string (from req.params) or already as ObjectId.
+  const oid = new mongoose.Types.ObjectId(productId.toString());
   const result = await ReviewModel.aggregate([
-    { $match: { productId: productId } },
+    { $match: { productId: oid } },
     {
       $group: {
         _id: '$productId',

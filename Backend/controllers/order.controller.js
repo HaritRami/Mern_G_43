@@ -7,8 +7,6 @@ import sendemail from "../email_handler/sendEmail.js";
 import { orderConfirmationTemplate } from "../email_handler/orderEmailTemplate.js";
 import { couponEmailTemplate } from "../email_handler/couponEmailTemplate.js";
 import CouponModel from "../models/coupon.model.js";
-import fs from 'fs';
-import path from 'path';
 export const createOrder = async (req, res) => {
   try {
     console.log('createOrder body', req.body);
@@ -259,7 +257,7 @@ export const createCheckoutSession = async (req, res) => {
     // Clear cart in DB
     await CartProductModel.deleteMany({ userId: authUserId });
 
-    // Generate Invoice
+    // ── Generate Invoice (buffer only — no disk write) ──────────────────────
     const orderDataForInvoice = {
         items: cartItems,
         subTotalAmt: subTotalAmt || 0,
@@ -271,7 +269,10 @@ export const createCheckoutSession = async (req, res) => {
     };
 
     const userObj = { name: req.user.name || 'Customer' };
-    const { buffer: pdfBuffer, fileName } = await generateInvoicePDF(orderDataForInvoice, userObj, addressObj, masterOrderId);
+    const fileName = `invoice_${masterOrderId}.pdf`;  // used only as email attachment filename
+    const { buffer: pdfBuffer } = await generateInvoicePDF(orderDataForInvoice, userObj, addressObj, masterOrderId);
+    console.log('[Checkout] Invoice buffer generated, size:', pdfBuffer.length);
+    // NOTE: invoice is NOT saved to disk — it is streamed on-demand via GET /:orderId/invoice
 
     // After order generation, validate use of the coupon if any
     if (couponCode) {
@@ -347,8 +348,7 @@ export const createCheckoutSession = async (req, res) => {
         message: "Checkout successful", 
         data: {
             orders: newOrders,
-            masterOrderId,
-            invoiceUrl: `/api/order/invoice/${fileName}`
+            masterOrderId
         },
         error: null
     });
@@ -359,13 +359,79 @@ export const createCheckoutSession = async (req, res) => {
   }
 };
 
-export const getInvoice = (req, res) => {
-    const { filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', 'invoices', filename);
-    
-    if (fs.existsSync(filePath)) {
-        res.download(filePath);
-    } else {
-        res.status(404).json({ message: "Invoice not found" });
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/order/:orderId/invoice  — On-demand PDF generation
+// ─────────────────────────────────────────────────────────────────────────────
+export const getOrderInvoice = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    if (!orderId) return res.status(400).json({ success: false, message: 'orderId param is required.' });
+
+    // Derive master order ID:
+    //   Sub-orders look like "ORD-1714000000000-1" → strip trailing "-N" (1–3 digits)
+    //   Master orders look like "ORD-1714000000000"  → use as-is
+    const masterOrderId = orderId.replace(/-\d{1,3}$/, '');
+    console.log(`[Invoice] Request for orderId=${orderId} → masterOrderId=${masterOrderId}`);
+
+    // Fetch ALL sub-orders belonging to this master order
+    const orders = await Order.find({ orderId: new RegExp(`^${masterOrderId}`) })
+      .populate('deliveryAddress')
+      .populate('productId');
+
+    console.log(`[Invoice] Order Data:`, JSON.stringify(orders.map(o => ({ orderId: o.orderId, userId: o.userId }))));
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
     }
+
+    // ── Security: only the order owner or an Admin can download ─────────────
+    const isAdmin = req.user.role === 'Admin';
+    const isOwner = orders[0].userId.some(
+      id => id.toString() === req.user._id.toString()
+    );
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ success: false, message: 'Access denied. This invoice belongs to another account.' });
+    }
+
+    // ── Aggregate items from all sub-orders ──────────────────────────────────
+    const address = orders[0].deliveryAddress || {};
+    const firstOrder = orders[0];
+
+    // Build a cart-like items array from each sub-order's productDetail + productId
+    const items = orders.map(o => ({
+      productId: {
+        name:  o.productId?.name  || o.productDetail?.name  || 'Product',
+        price: o.productId?.price || o.subTotalAmt / (o.productDetail?.quantity || 1),
+      },
+      quantity: o.productDetail?.quantity || 1
+    }));
+
+    const subTotalAmt = orders.reduce((acc, o) => acc + (o.subTotalAmt || 0), 0);
+    const totalAmt    = orders.reduce((acc, o) => acc + (o.totalAmt    || 0), 0);
+    const discount    = subTotalAmt - totalAmt > 0 ? subTotalAmt - totalAmt : 0;
+
+    const orderDataForInvoice = {
+      items,
+      subTotalAmt,
+      discount,
+      totalAmt,
+      paymentStatus: firstOrder.paymentStatus || '',
+      email: req.user.email || '',
+      couponCode: firstOrder.couponCode || ''
+    };
+
+    const userObj = { name: req.user.name || 'Customer' };
+
+    console.log(`[Invoice] Building HTML for ${masterOrderId}...`);
+    const { buffer } = await generateInvoicePDF(orderDataForInvoice, userObj, address, masterOrderId);
+    console.log(`[Invoice] PDF buffer ready, streaming to client (${buffer.length} bytes)`);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice_${masterOrderId}.pdf"`);
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('[Invoice] Error generating on-demand invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate invoice.', error: error.message });
+  }
 };

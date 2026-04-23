@@ -474,10 +474,10 @@ const CartView = () => {
                           </div>
                           <div className="col-md-3">
                             <div className="price-tag">
-                              ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
+                              ₹{((item?.productId?.price || 0) * (item?.quantity || 1)).toLocaleString('en-IN')}
                             </div>
                             <div className="unit-price">
-                              ${(item?.productId?.price || 0).toFixed(2)} each
+                              ₹{(item?.productId?.price || 0).toLocaleString('en-IN')} each
                             </div>
                           </div>
                           <div className="col-md-1">
@@ -515,12 +515,12 @@ const CartView = () => {
 
                 <div className="summary-item">
                   <span>Subtotal</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>₹{totalPrice.toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="summary-item text-success">
                   <span>Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>-₹{discount.toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="summary-item">
@@ -532,7 +532,7 @@ const CartView = () => {
 
                 <div className="summary-item summary-total">
                   <span>Total</span>
-                  <span>${(totalPrice - discount).toFixed(2)}</span>
+                  <span>₹{(totalPrice - discount).toLocaleString('en-IN')}</span>
                 </div>
                 {/* /checkout */}
                 <Link

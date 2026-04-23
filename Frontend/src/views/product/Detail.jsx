@@ -232,7 +232,7 @@ const ProductDetailView = () => {
              {product.name.length > 40 ? `${product.name.substring(0, 40)}...` : product.name}
           </h3>
           <div className="product-price-row mt-auto">
-            <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
+            <span className="product-price">₹{parseFloat(product.price).toLocaleString('en-IN')}</span>
             {product.averageRating > 0 && (
               <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
                 <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
@@ -722,11 +722,11 @@ const ProductDetailView = () => {
               {/* Price Row */}
               <div className="my-4">
                 <div className="detail-price">
-                  <span>${parseFloat(selectedProduct.price).toFixed(2)}</span>
+                  <span>₹{parseFloat(selectedProduct.price).toLocaleString('en-IN')}</span>
                   {selectedProduct.discount > 0 && (
                      <>
                         <span className="detail-price-old lh-1">
-                          ${(selectedProduct.price / (1 - selectedProduct.discount / 100)).toFixed(2)}
+                          ₹{(selectedProduct.price / (1 - selectedProduct.discount / 100)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                         <span className="badge bg-danger" style={{fontSize: '1rem', padding: '6px 12px'}}>
                           🔥 Save {selectedProduct.discount}%
@@ -805,6 +805,15 @@ const ProductDetailView = () => {
             productName={selectedProduct.name}
             discount={selectedProduct.discount}
             category={selectedProduct.category}
+            onRatingUpdate={(newAvgRating, newTotalReviews) => {
+              // Update parent state so the star badge in the product header
+              // reflects the new rating immediately without a page refresh.
+              setSelectedProduct(prev => ({
+                ...prev,
+                averageRating: newAvgRating,
+                totalReviews: newTotalReviews
+              }));
+            }}
           />
         </div>
 

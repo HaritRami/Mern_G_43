@@ -51,6 +51,38 @@ const OrdersView = () => {
     fetchOrders();
   }, []);
 
+  // ── On-demand invoice download ───────────────────────────────────────
+  // Fetches PDF buffer from the backend (auth header required),
+  // converts to a blob, and triggers a browser download — no pre-stored file needed.
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      const token = savedUser?.tokens?.accessToken;
+      if (!token) {
+        toast.error('Please log in to download your invoice.');
+        navigate('/account/signin');
+        return;
+      }
+      toast.info('Preparing invoice...', { autoClose: 2000 });
+      const res = await fetch(`/api/order/${orderId}/invoice`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('[Invoice] Download error:', e);
+      toast.error('Could not download invoice. Please try again.');
+    }
+  };
+
   const TrackingStepper = ({ order }) => {
     // Determine Tracking Status from API payload
     const calculateSteps = () => {
@@ -231,15 +263,14 @@ const OrdersView = () => {
                 <div className="card-footer bg-white border-top d-flex justify-content-between py-3 px-4">
                   <div>
                     {order?.orderId?.startsWith('ORD-') && (
-                        <a 
-                            href={`${GLOBAL_API_URL}/order/invoice/invoice_${order.orderId.split('-').slice(0, 2).join('-')}.pdf`} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="btn btn-outline-success btn-sm fw-bold rounded-pill px-3"
-                        >
-                            <i className="bi bi-receipt-cutoff me-2"></i>Download Invoice
-                        </a>
-                     )}
+                      <button
+                        onClick={() => handleDownloadInvoice(order.orderId)}
+                        className="btn btn-outline-success btn-sm fw-bold rounded-pill px-3"
+                        id={`invoice-btn-${order._id}`}
+                      >
+                        <i className="bi bi-receipt-cutoff me-2"></i>Download Invoice
+                      </button>
+                    )}
                   </div>
                   <div>
                     <Link to={`/track/${order._id}`} className="btn btn-primary btn-sm fw-bold rounded-pill px-3">

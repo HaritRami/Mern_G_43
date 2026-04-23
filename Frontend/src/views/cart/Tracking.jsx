@@ -275,6 +275,36 @@ const Tracking = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
+  // ── On-demand invoice download ───────────────────────────────────────
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      const token = savedUser?.tokens?.accessToken;
+      if (!token) {
+        toast.error('Please log in to download your invoice.');
+        navigate('/account/signin');
+        return;
+      }
+      toast.info('Preparing invoice...', { autoClose: 2000 });
+      const res = await fetch(`/api/order/${orderId}/invoice`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('[Invoice] Download error:', e);
+      toast.error('Could not download invoice. Please try again.');
+    }
+  };
+
   // Loading Skeleton Component
   const TrackingSkeleton = () => (
     <div className="container tracking-container">
@@ -382,14 +412,13 @@ const Tracking = () => {
             <p className="text-muted mb-0">ID: <span className="fw-semibold text-dark">{order?.orderId || "Unknown"}</span></p>
           </div>
           {order?.orderId?.startsWith('ORD-') && (
-            <a
-              href={`${GLOBAL_API_URL}/order/invoice/invoice_${order.orderId.split('-').slice(0, 2).join('-')}.pdf`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => handleDownloadInvoice(order.orderId)}
               className="btn btn-outline-primary rounded-pill fw-bold"
+              id="tracking-invoice-btn"
             >
               <i className="bi bi-receipt me-2"></i>Invoice
-            </a>
+            </button>
           )}
         </div>
       </div>

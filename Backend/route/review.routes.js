@@ -18,23 +18,26 @@ import {
 
 const reviewRouter = express.Router();
 
+// ── IMPORTANT: Specific static routes MUST come before dynamic /:param routes ──
+
 // Public / Frontend AI template loading
 reviewRouter.get('/ai-reply', generateReviewTemplate);
 
-// Public — anyone can read reviews
-reviewRouter.get('/:productId', getProductReviews);
-
-// Protected — must be logged in
-reviewRouter.post('/', authenticateToken, addReview);
+// Protected — check if current user reviewed (must be BEFORE /:productId)
 reviewRouter.get('/check/:productId', authenticateToken, checkReviewExists);
-reviewRouter.put('/:reviewId', authenticateToken, updateReview);
-reviewRouter.delete('/:reviewId', authenticateToken, deleteReview);
 
-// Admin Routes for Managing JSON Templates
-// We use simple authenticateToken for safety. Role guarding should be applied in a full production environment.
+// Admin Routes (must be BEFORE /:productId so "admin" is not treated as a productId)
 reviewRouter.get('/admin/templates', authenticateToken, getAllTemplates);
 reviewRouter.post('/admin/templates', authenticateToken, addTemplate);
 reviewRouter.put('/admin/templates/:id', authenticateToken, updateTemplate);
 reviewRouter.delete('/admin/templates/:id', authenticateToken, deleteTemplate);
+
+// Public — fetch paginated reviews for a product (dynamic, goes last)
+reviewRouter.get('/:productId', getProductReviews);
+
+// Protected — create / update / delete
+reviewRouter.post('/', authenticateToken, addReview);
+reviewRouter.put('/:reviewId', authenticateToken, updateReview);
+reviewRouter.delete('/:reviewId', authenticateToken, deleteReview);
 
 export default reviewRouter;

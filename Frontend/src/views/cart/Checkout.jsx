@@ -1,5 +1,5 @@
 import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -130,6 +130,8 @@ const checkoutStyles = `
 const CheckoutView = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [addressLoading, setAddressLoading] = useState(false); // separate from page-level loading
+  const fetchAddressGuard = useRef(false);          // prevents StrictMode double-fetch
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
@@ -153,9 +155,12 @@ const CheckoutView = () => {
   });
 
   useEffect(() => {
+    if (fetchAddressGuard.current) return; // StrictMode double-invoke guard
+    fetchAddressGuard.current = true;
+
     fetchCartItems();
     fetchAddresses();
-    
+
     // Auto-fill user identity securely
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser) {
@@ -182,12 +187,16 @@ const CheckoutView = () => {
       const savedUser = JSON.parse(localStorage.getItem("user"));
       const response = await axios.get(`${GLOBAL_API_URL}/address/user/${savedUser.id}`, authConfig);
       if (response.data.success) {
-        setAddresses(response.data.data);
-        if (response.data.data.length === 0) {
+        // Deduplicate by _id before storing — guards against any race condition
+        const raw = response.data.data || [];
+        const unique = Array.from(new Map(raw.map(a => [a._id, a])).values());
+        console.log('[Checkout] Address API response:', unique);
+        setAddresses(unique);
+        if (unique.length === 0) {
           setShowAddressForm(true);
         } else {
-          const defaultAddr = response.data.data.find(a => a.isDefault);
-          setSelectedAddressId(defaultAddr ? defaultAddr._id : response.data.data[0]._id);
+          const defaultAddr = unique.find(a => a.isDefault);
+          setSelectedAddressId(defaultAddr ? defaultAddr._id : unique[0]._id);
         }
       }
     } catch (error) {
@@ -197,7 +206,8 @@ const CheckoutView = () => {
 
   const handleAddNewAddress = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    e.stopPropagation(); // prevent outer form's handleSubmit from firing
+    setAddressLoading(true);
     try {
       const authConfig = getAuthConfig();
       const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -208,12 +218,12 @@ const CheckoutView = () => {
         toast.success('Address added successfully!');
         setNewAddress({ address_line: '', city: '', state: '', country: '', mobile: '' });
         setShowAddressForm(false);
-        fetchAddresses();
+        await fetchAddresses(); // re-fetch replaces state (no append)
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error adding address');
     } finally {
-      setLoading(false);
+      setAddressLoading(false);
     }
   };
 
@@ -294,7 +304,7 @@ const CheckoutView = () => {
         code: couponCodeInput,
         cartTotal: totalPrice
       }, authConfig);
-      
+
       if (res.data.success) {
         setAppliedCouponCode(res.data.data.code);
         setCouponDiscount(res.data.data.discountAmount);
@@ -316,14 +326,14 @@ const CheckoutView = () => {
 
   const axiosRetry = async (url, payload, config, retries = 2) => {
     for (let i = 0; i <= retries; i++) {
-        try {
-            return await axios.post(url, payload, config);
-        } catch (error) {
-            if (i === retries) throw error;
-            console.warn(`Retrying API call to ${url} (${i + 1}/${retries})...`);
-            // wait 1000ms before retrying
-            await new Promise(res => setTimeout(res, 1000));
-        }
+      try {
+        return await axios.post(url, payload, config);
+      } catch (error) {
+        if (i === retries) throw error;
+        console.warn(`Retrying API call to ${url} (${i + 1}/${retries})...`);
+        // wait 1000ms before retrying
+        await new Promise(res => setTimeout(res, 1000));
+      }
     }
   };
 
@@ -376,9 +386,9 @@ const CheckoutView = () => {
             };
 
             const resData = await axiosRetry(`${GLOBAL_API_URL}/order/checkout`, checkoutPayload, authConfig);
-            
+
             if (!resData.data.success) {
-               throw new Error(resData.data.message || "Failed to process checkout");
+              throw new Error(resData.data.message || "Failed to process checkout");
             }
 
             setCartItems([]);
@@ -447,9 +457,9 @@ const CheckoutView = () => {
       };
 
       const resData = await axiosRetry(`${GLOBAL_API_URL}/order/checkout`, checkoutPayload, authConfig);
-      
+
       if (!resData.data.success) {
-         throw new Error(resData.data.message || "Failed to place order");
+        throw new Error(resData.data.message || "Failed to place order");
       }
 
       setCartItems([]);
@@ -511,7 +521,7 @@ const CheckoutView = () => {
     <>
       <style>{checkoutStyles}</style>
       <ToastContainer />
-      
+
       <div className="checkout-header">
         <div className="container">
           <h1 className="checkout-title">Checkout</h1>
@@ -560,9 +570,9 @@ const CheckoutView = () => {
                 <div className="card-header d-flex justify-content-between align-items-center">
                   <div><i className="bi bi-truck"></i> Delivery Address</div>
                   {!showAddressForm && (
-                     <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowAddressForm(true)}>
-                       + Add New Address
-                     </button>
+                    <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowAddressForm(true)}>
+                      + Add New Address
+                    </button>
                   )}
                 </div>
                 <div className="card-body">
@@ -571,22 +581,24 @@ const CheckoutView = () => {
                       <h5 className="mb-3">Add New Address</h5>
                       <div className="row g-3">
                         <div className="col-12">
-                          <input type="text" className="form-control" placeholder="Address Line" value={newAddress.address_line} onChange={(e) => setNewAddress({...newAddress, address_line: e.target.value})} />
+                          <input type="text" className="form-control" placeholder="Address Line" value={newAddress.address_line} onChange={(e) => setNewAddress({ ...newAddress, address_line: e.target.value })} />
                         </div>
                         <div className="col-md-6">
-                          <input type="text" className="form-control" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})} />
+                          <input type="text" className="form-control" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} />
                         </div>
                         <div className="col-md-6">
-                          <input type="text" className="form-control" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})} />
+                          <input type="text" className="form-control" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
                         </div>
                         <div className="col-md-6">
-                          <input type="text" className="form-control" placeholder="Country" value={newAddress.country} onChange={(e) => setNewAddress({...newAddress, country: e.target.value})} />
+                          <input type="text" className="form-control" placeholder="Country" value={newAddress.country} onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })} />
                         </div>
                         <div className="col-md-6">
-                          <input type="tel" className="form-control" placeholder="Mobile" value={newAddress.mobile} onChange={(e) => setNewAddress({...newAddress, mobile: e.target.value})} />
+                          <input type="tel" className="form-control" placeholder="Mobile" value={newAddress.mobile} onChange={(e) => setNewAddress({ ...newAddress, mobile: e.target.value })} />
                         </div>
                         <div className="col-12 mt-3">
-                          <button type="button" className="btn btn-primary me-2" onClick={handleAddNewAddress} disabled={loading || !newAddress.address_line || !newAddress.city || !newAddress.state || !newAddress.country || !newAddress.mobile}>Save Address</button>
+                          <button type="button" className="btn btn-primary me-2" onClick={handleAddNewAddress} disabled={addressLoading || !newAddress.address_line || !newAddress.city || !newAddress.state || !newAddress.country || !newAddress.mobile}>
+                            {addressLoading ? <><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...</> : 'Save Address'}
+                          </button>
                           {addresses.length > 0 && (
                             <button type="button" className="btn btn-secondary" onClick={() => setShowAddressForm(false)}>Cancel</button>
                           )}
@@ -625,7 +637,7 @@ const CheckoutView = () => {
                 <div className="card-body">
                   <div className="row g-3 mb-4">
                     <div className="col-md-6">
-                      <div 
+                      <div
                         className={`payment-method ${formData.paymentMethod === 'razorpay' ? 'selected' : ''}`}
                         onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'razorpay' }))}
                       >
@@ -652,7 +664,7 @@ const CheckoutView = () => {
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <div 
+                      <div
                         className={`payment-method ${formData.paymentMethod === 'cod' ? 'selected' : ''}`}
                         onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'cod' }))}
                       >
@@ -702,7 +714,7 @@ const CheckoutView = () => {
                             </small>
                           </div>
                           <span className="text-muted">
-                            ${((item?.productId?.price || 0) * (item?.quantity || 1)).toFixed(2)}
+                            ₹{((item?.productId?.price || 0) * (item?.quantity || 1)).toLocaleString('en-IN')}
                           </span>
                         </div>
                       </div>
@@ -711,7 +723,7 @@ const CheckoutView = () => {
                     <div className="list-group-item">
                       <div className="d-flex justify-content-between">
                         <span>Subtotal</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span>₹{totalPrice.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
 
@@ -730,7 +742,7 @@ const CheckoutView = () => {
                       <div className="list-group-item">
                         <div className="d-flex justify-content-between text-success">
                           <span>Coupon Discount ({appliedCouponCode})</span>
-                          <span>-${couponDiscount.toFixed(2)}</span>
+                          <span>-₹{couponDiscount.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     )}
@@ -739,7 +751,7 @@ const CheckoutView = () => {
                       <div className="list-group-item">
                         <div className="d-flex justify-content-between text-success">
                           <span>Discount</span>
-                          <span>-${discount.toFixed(2)}</span>
+                          <span>-₹{discount.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     )}
@@ -754,7 +766,7 @@ const CheckoutView = () => {
                     <div className="list-group-item">
                       <div className="d-flex justify-content-between">
                         <strong>Total</strong>
-                        <strong>${(totalPrice - (discount + couponDiscount)).toFixed(2)}</strong>
+                        <strong>₹{(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}</strong>
                       </div>
                     </div>
                   </div>
@@ -777,7 +789,7 @@ const CheckoutView = () => {
                 )}
 
                 <div className="card-footer">
-                  <button 
+                  <button
                     type="submit"
                     className="btn pay-button w-100"
                     disabled={loading}
@@ -789,7 +801,7 @@ const CheckoutView = () => {
                       </>
                     ) : (
                       <>
-                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay $${(totalPrice - (discount + couponDiscount)).toFixed(2)}`}
+                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay ₹{(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}`}
                       </>
                     )}
                   </button>

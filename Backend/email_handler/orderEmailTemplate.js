@@ -5,8 +5,8 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
         <strong>${item.productId.name}</strong>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #4a5568;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">$${item.productId.price.toFixed(2)}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">$${(item.productId.price * item.quantity).toFixed(2)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹{item.productId.price.toLocaleString('en-IN')}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹{(item.productId.price * item.quantity).toLocaleString('en-IN')}</td>
     </tr>
   `).join('');
 
@@ -73,12 +73,12 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
           <table class="totals-table">
             <tr class="totals-row">
               <td width="70%">Subtotal:</td>
-              <td width="30%">$${orderData.subTotalAmt.toFixed(2)}</td>
+              <td width="30%">₹{orderData.subTotalAmt.toLocaleString('en-IN')}</td>
             </tr>
             ${orderData.discount > 0 ? `
             <tr class="totals-row">
               <td width="70%">Discount:</td>
-              <td width="30%">-$${orderData.discount.toFixed(2)}</td>
+              <td width="30%">-₹{orderData.discount.toLocaleString('en-IN')}</td>
             </tr>` : ''}
             <tr class="totals-row">
               <td width="70%">Shipping:</td>
@@ -86,7 +86,7 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
             </tr>
             <tr class="totals-row totals-final">
               <td width="70%" style="padding-top: 12px;">Grand Total:</td>
-              <td width="30%" style="padding-top: 12px;">$${orderData.totalAmt.toFixed(2)}</td>
+              <td width="30%" style="padding-top: 12px;">₹{orderData.totalAmt.toLocaleString('en-IN')}</td>
             </tr>
           </table>
 

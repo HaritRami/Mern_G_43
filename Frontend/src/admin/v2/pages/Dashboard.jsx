@@ -154,7 +154,7 @@ const Dashboard = () => {
                                                 <small className="text-muted">{new Date(order.createdAt).toLocaleDateString()}</small>
                                             </div>
                                             <div className="text-end">
-                                                <div className="fw-bold text-dark">${order.totalAmt?.toFixed(2) || "0.00"}</div>
+                                                <div className="fw-bold text-dark">₹{order.totalAmt?.toLocaleString('en-IN') || "0"}</div>
                                                 <span className={`badge rounded-pill ${order.paymentStatus === 'PAID' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`} style={{ fontSize: "0.7rem", fontWeight: 600 }}>
                                                     {order.paymentStatus || "PENDING"}
                                                 </span>
@@ -191,7 +191,7 @@ const Dashboard = () => {
                                                 <h6 className="mb-1 fw-semibold text-truncate">{product.name}</h6>
                                                 <small className="text-muted d-block text-truncate text-capitalize">{product.category?.name || "Product"}</small>
                                             </div>
-                                            <div className="fw-bold text-dark">${product.price?.toFixed(2)}</div>
+                                            <div className="fw-bold text-dark">₹{product.price?.toLocaleString('en-IN')}</div>
                                         </li>
                                     ))}
                                 </ul>

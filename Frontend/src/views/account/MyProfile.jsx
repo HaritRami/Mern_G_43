@@ -1,5 +1,6 @@
 import { API_URL as GLOBAL_API_URL } from '../../config/apiConfig';
 import React, { useState, useEffect, useRef } from "react";
+import { useUser } from "../../context/UserContext";
 import { ReactComponent as IconPerson } from "bootstrap-icons/icons/person.svg";
 import { ReactComponent as IconEnvelope } from "bootstrap-icons/icons/envelope.svg";
 import { ReactComponent as IconPhone } from "bootstrap-icons/icons/phone.svg";
@@ -13,6 +14,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const MyProfileView = () => {
+  const { updateUser } = useUser();
   const [userData, setUserData] = useState(null);
   const [editMode, setEditMode] = useState({
     name: false,
@@ -380,14 +382,16 @@ const MyProfileView = () => {
       );
 
       if (response.data.success) {
-        // Update localStorage with the complete updated user data from response
         const updatedUserData = {
           ...userData,
-          ...response.data.data // Use the data from server response
+          ...response.data.data
         };
-        localStorage.setItem('user', JSON.stringify(updatedUserData));
+        // ── Push to global context (triggers Header + all consumers to re-render) ──
+        updateUser(updatedUserData);
+        // Keep local state in sync
         setUserData(updatedUserData);
         toast.success(`${field.charAt(0).toUpperCase() + field.slice(1)} updated successfully`);
+        console.log('Updated user:', updatedUserData);
       }
     } catch (error) {
       console.error(`Error updating ${field}:`, error);
@@ -462,12 +466,16 @@ const MyProfileView = () => {
         toast.success("Profile image updated successfully!");
         const updatedUserData = {
           ...userData,
-          ...response.data.data
+          ...response.data.data,
+          _avatarVersion: Date.now()  // cache-buster: forces Header img to reload
         };
-        // Update user storage
-        localStorage.setItem('user', JSON.stringify(updatedUserData));
+        console.log('Updated user (avatar):', updatedUserData);
+        // ── Push to global context (triggers Header avatar to update instantly) ──
+        updateUser(updatedUserData);
+        // Keep local state in sync
         setUserData(updatedUserData);
-        setAvatarFile(null); // Clear pending upload state
+        setAvatarFile(null);     // Clear pending upload state
+        setAvatarPreview(null);  // Clear preview so the live URL from DB renders
       }
     } catch (error) {
       console.error("Avatar upload error:", error);

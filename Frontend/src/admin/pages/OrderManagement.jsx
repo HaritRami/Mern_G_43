@@ -76,8 +76,8 @@ const OrderManagement = () => {
                         <h5 className="card-title">Orders</h5>
                         <div className="d-flex gap-2 w-auto">
                             {isAdmin && (
-                                <select 
-                                    className="form-select" 
+                                <select
+                                    className="form-select"
                                     value={selectedSeller}
                                     onChange={(e) => setSelectedSeller(e.target.value)}
                                 >
@@ -134,7 +134,7 @@ const OrderManagement = () => {
                                                     </td>
                                                 )}
                                                 <td>{order.paymentStatus || "-"}</td>
-                                                <td>{order.totalAmt != null ? `$${order.totalAmt.toFixed(2)}` : "-"}</td>
+                                                <td>{order.totalAmt != null ? `₹{order.totalAmt.toLocaleString('en-IN')}` : "-"}</td>
                                                 <td>{new Date(order.createdAt).toLocaleString()}</td>
                                             </tr>
                                         ))

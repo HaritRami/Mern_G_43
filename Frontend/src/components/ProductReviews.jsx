@@ -78,16 +78,20 @@ const RatingBar = ({ star, count, total }) => {
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-const ProductReviews = ({ productId, productName, discount, category }) => {
+// onRatingUpdate(avgRating, totalReviews) — optional callback so the parent
+// (Detail.jsx) can refresh its own selectedProduct state instantly.
+const ProductReviews = ({ productId, productName, discount, category, onRatingUpdate }) => {
   const navigate = useNavigate();
 
-  const [reviews, setReviews]         = useState([]);
-  const [avgRating, setAvgRating]     = useState(0);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [loading, setLoading]         = useState(true);
-  const [sortBy, setSortBy]           = useState('latest');
-  const [page, setPage]               = useState(1);
-  const [totalPages, setTotalPages]   = useState(1);
+  const [reviews, setReviews]               = useState([]);
+  const [avgRating, setAvgRating]           = useState(0);
+  const [totalReviews, setTotalReviews]     = useState(0);
+  // Per-star distribution fetched from server (not derived from page slice)
+  const [ratingsDistribution, setRatingsDistribution] = useState({ 5:0, 4:0, 3:0, 2:0, 1:0 });
+  const [loading, setLoading]               = useState(true);
+  const [sortBy, setSortBy]                 = useState('latest');
+  const [page, setPage]                     = useState(1);
+  const [totalPages, setTotalPages]         = useState(1);
 
   // Form state
   const [formRating, setFormRating]   = useState(0);
@@ -109,6 +113,15 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
   const [editComment, setEditComment]   = useState('');
   const [myReview, setMyReview]         = useState(null);
   const [deletingId, setDeletingId]     = useState(null);
+
+  // ── Store onRatingUpdate in a ref ────────────────────────────────────────
+  // This is the KEY fix for the infinite loop:
+  // An inline arrow function prop gets a NEW reference on every parent render.
+  // If we put it in a useCallback dependency array, the callback recreates
+  // → useEffect fires → fetch runs → parent state updates → re-render → loop.
+  // Storing it in a ref gives us an always-current value with a STABLE identity.
+  const onRatingUpdateRef = useRef(onRatingUpdate);
+  useEffect(() => { onRatingUpdateRef.current = onRatingUpdate; }, [onRatingUpdate]);
 
   // Auth helpers
   const getSavedUser = () => {
@@ -140,23 +153,45 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
     }
   }, [isLoggedIn, productId]);
 
-  // ── Fetch reviews ────────────────────────────────────────────────────────
+  // ── Fetch per-star distribution (separate, stable, no loop risk) ─────────
+  const fetchDistribution = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`/api/reviews/${productId}?sort=latest&page=1&limit=1000`);
+      if (data.success) {
+        const dist = { 5:0, 4:0, 3:0, 2:0, 1:0 };
+        data.data.reviews.forEach(r => {
+          if (dist[r.rating] !== undefined) dist[r.rating]++;
+        });
+        setRatingsDistribution(dist);
+      }
+    } catch { /* non-critical — silently ignore */ }
+  }, [productId]); // only productId — stable across sorts/pages
+
+  // ── Fetch paginated reviews ───────────────────────────────────────────────
+  // IMPORTANT: onRatingUpdate is accessed via ref — NOT in the dependency array.
+  // This prevents the inline arrow function prop from causing infinite re-renders.
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(`/api/reviews/${productId}?sort=${sortBy}&page=${page}&limit=5`);
       if (data.success) {
+        const newAvg   = data.data.averageRating;
+        const newTotal = data.data.totalReviews;
+
         setReviews(data.data.reviews);
-        setAvgRating(data.data.averageRating);
-        setTotalReviews(data.data.totalReviews);
+        setAvgRating(newAvg);
+        setTotalReviews(newTotal);
         setTotalPages(data.data.pagination.pages);
+
+        // Call parent callback via ref — safe, no loop
+        if (onRatingUpdateRef.current) onRatingUpdateRef.current(newAvg, newTotal);
       }
     } catch (err) {
       console.error('Error fetching reviews:', err);
     } finally {
       setLoading(false);
     }
-  }, [productId, sortBy, page]);
+  }, [productId, sortBy, page]); // onRatingUpdate deliberately NOT here — use ref instead
 
   // ── Check if current user already reviewed ───────────────────────────────
   const checkMyReview = useCallback(async () => {
@@ -170,10 +205,16 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
     } catch { /* ignore */ }
   }, [productId, isLoggedIn]);
 
+  // Runs whenever sort or page changes — fetches the current page of reviews
   useEffect(() => {
     fetchReviews();
     checkMyReview();
   }, [fetchReviews, checkMyReview]);
+
+  // Runs only when the product itself changes — fetches full distribution counts
+  useEffect(() => {
+    fetchDistribution();
+  }, [fetchDistribution]);
 
   // ── AI Suggestion Helpers ────────────────────────────────────────────────
   useEffect(() => {
@@ -259,6 +300,7 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
         setMyReview(data.data);
         setPage(1);
         fetchReviews();
+        fetchDistribution(); // refresh bar counts after new review
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Unable to submit review. Please try again.';
@@ -281,6 +323,7 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
         setEditReviewId(null);
         setMyReview(data.data);
         fetchReviews();
+        fetchDistribution(); // refresh bar counts after edit
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Error updating review');
@@ -298,6 +341,7 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
       setMyReview(null);
       setPage(1);
       fetchReviews();
+      fetchDistribution(); // refresh bar counts after delete
     } catch (err) {
       alert(err.response?.data?.message || 'Error deleting review');
     } finally {
@@ -306,8 +350,9 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
   };
 
   // ── Variables for Render ─────────────────────────────────────────────────
+  // Use server-fetched distribution, not the current-page slice, so bars are always accurate.
   const distribution = [5, 4, 3, 2, 1].map(star => ({
-    star, count: reviews.filter(r => r.rating === star).length
+    star, count: ratingsDistribution[star] || 0
   }));
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-IN', {
@@ -476,7 +521,7 @@ const ProductReviews = ({ productId, productName, discount, category }) => {
           {/* Right: Distribution Bars */}
           <div className="col flex-grow-1">
             {distribution.map(({ star, count }) => (
-              <RatingBar key={star} star={star} count={count} total={reviews.length} />
+              <RatingBar key={star} star={star} count={count} total={totalReviews} />
             ))}
           </div>
         </div>

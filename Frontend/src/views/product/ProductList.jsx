@@ -535,11 +535,15 @@ const ProductListView = () => {
                             {product.name.length > 45 ? `${product.name.substring(0, 45)}...` : product.name}
                           </h3>
                           <div className="product-price-row">
-                            <span className="product-price">${parseFloat(product.price).toFixed(2)}</span>
-                            <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
-                              <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
-                              <span className="small fw-bold text-dark">4.9</span>
-                            </div>
+                            <span className="product-price">₹{parseFloat(product.price).toLocaleString('en-IN')}</span>
+                            {product.averageRating > 0 ? (
+                              <div className="d-flex align-items-center gap-1 bg-light rounded-pill px-2 py-1">
+                                <i className="bi bi-star-fill text-warning" style={{fontSize: '0.8rem'}}></i>
+                                <span className="small fw-bold text-dark">{product.averageRating.toFixed(1)}</span>
+                              </div>
+                            ) : (
+                              <span className="small text-muted fst-italic">No reviews</span>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -70,7 +70,7 @@ export const couponEmailTemplate = ({ userName, couponCode, discountPercent, min
 
           <div class="details-box">
             <h3 style="margin-top: 0; color: #2d3748;">How to use your coupon:</h3>
-            <p>✅ Minimum purchase required: <strong>$${minPurchaseAmount}</strong></p>
+            <p>✅ Minimum purchase required: <strong>₹{Number(minPurchaseAmount).toLocaleString('en-IN')}</strong></p>
             <p>✅ Valid until: <strong>${new Date(expiryDate).toLocaleDateString()}</strong></p>
             <p>✅ Use only once per customer</p>
             <p>⛔ Non-transferable & Not combinable with other offers</p>

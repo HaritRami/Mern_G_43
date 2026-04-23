@@ -54,7 +54,7 @@ const HomeView = () => {
     {
       icon: <IconTruck width={32} height={32} />,
       title: "Free Worldwide Shipping",
-      description: "On all orders over $150",
+      description: "On all orders over ₹10,000",
     },
     {
       icon: <IconAward width={32} height={32} />,
@@ -167,7 +167,7 @@ const HomeView = () => {
                     <div className="product-info">
                       <h3 className="product-title text-truncate">{product.name}</h3>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span className="product-price">${product.price.toFixed(2)}</span>
+                        <span className="product-price">₹{product.price.toLocaleString('en-IN')}</span>
                         <div className="text-warning d-flex align-items-center gap-1">
                            <IconStarFill width={14} height={14} className="me-1" />
                            <span className="text-dark fw-bold small">{product.averageRating > 0 ? product.averageRating.toFixed(1) : "-"}</span>
@@ -213,7 +213,7 @@ const HomeView = () => {
                       <div className="product-info">
                         <h3 className="product-title text-truncate">{product.name}</h3>
                         <div className="d-flex justify-content-between align-items-center">
-                          <span className="product-price">${product.price.toFixed(2)}</span>
+                          <span className="product-price">₹{product.price.toLocaleString('en-IN')}</span>
                           <div className="text-warning d-flex align-items-center gap-1">
                             <IconStarFill width={14} height={14} />
                             <span className="text-dark fw-bold small">{product.averageRating.toFixed(1)}</span>

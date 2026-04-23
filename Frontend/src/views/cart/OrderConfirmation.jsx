@@ -92,7 +92,7 @@ const OrderConfirmation = () => {
               </div>
               <div className="col-6 text-end">
                 <small className="text-muted text-uppercase fw-bold d-block mb-1">Amount Paid</small>
-                <div className="fw-bold text-success fs-4">₹{order.totalAmt?.toFixed(2)}</div>
+                <div className="fw-bold text-success fs-4">₹{order.totalAmt?.toLocaleString('en-IN') ?? '0'}</div>
               </div>
             </div>
           </div>

@@ -52,8 +52,8 @@ const orderSchema = new mongoose.Schema(
       default: 0,
     },
     invoiceReceipt: {
-      type: Number,
-      default: 0,
+      type: String,
+      default: "",   // stores the PDF filename, e.g. "invoice_ORD-1714000000000.pdf"
     },
     trackingDate: {
       type: Date,
