@@ -52,29 +52,29 @@ const CategoryManagement = () => {
     try {
       const savedUser = JSON.parse(localStorage.getItem("user"));
       const userRole = savedUser?.role || savedUser?.data?.role || "";
-      const userId = Cookies.get("userId");
+      // Use _id from localStorage (reliable ObjectId string)
+      const userId = savedUser?._id || savedUser?.data?._id || Cookies.get("userId");
 
-      const response = await axios.get(`${API_URL}`, {
-        params: {
-          search: searchTerm,
-          sortField,
-          sortOrder: sortDirection,
-          page: currentPage,
-          limit: itemsPerPage
-        }
-      });
+      // Build params - pass userId to backend so it filters server-side
+      const params = {
+        search: searchTerm,
+        sortField,
+        sortOrder: sortDirection,
+        page: currentPage,
+        limit: itemsPerPage
+      };
+
+      // Seller: filter by their own userId on the backend
+      if (userRole === "Seller" && userId) {
+        params.userId = userId;
+      }
+
+      const response = await axios.get(`${API_URL}`, { params });
 
       if (response.data && response.data.success) {
-        let cats = response.data.data;
-
-        // Seller sees only their own categories; Admin sees all
-        if (userRole === "Seller" && userId) {
-          cats = cats.filter((item) => item.userId === userId);
-        }
-
-        setCategories(cats);
+        setCategories(response.data.data);
         setTotalPages(response.data.pagination.pages);
-        setTotalItems(cats.length);
+        setTotalItems(response.data.pagination.total);
       } else {
         toast.error("Invalid data format received!");
       }
