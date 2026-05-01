@@ -9,6 +9,8 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
     return isNaN(num) ? '0' : num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   };
 
+  const safeVal = (val, fallback = 'N/A') => (val !== undefined && val !== null && val !== '') ? val : fallback;
+
   const items = Array.isArray(orderData.items) ? orderData.items : [];
 
   const itemsRows = items.map((item, idx) => {
@@ -21,8 +23,8 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
         <td>${idx + 1}</td>
         <td>${name}</td>
         <td style="text-align:center">${qty}</td>
-        <td style="text-align:right">₹{fmt(unitPrice)}</td>
-        <td style="text-align:right">₹{fmt(lineTotal)}</td>
+        <td style="text-align:right">₹${fmt(unitPrice)}</td>
+        <td style="text-align:right">₹${fmt(lineTotal)}</td>
       </tr>`;
   }).join('');
 
@@ -44,7 +46,7 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
       <td colspan="2" style="text-align:right">
         Discount${orderData.couponCode ? ` (${orderData.couponCode})` : ''}:
       </td>
-      <td style="text-align:right;color:#16a34a">- ₹{fmt(orderData.discount)}</td>
+      <td style="text-align:right;color:#16a34a">- ₹${fmt(orderData.discount)}</td>
     </tr>` : '';
 
   return `<!DOCTYPE html>
@@ -363,7 +365,7 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
       <tbody>
         <tr>
           <td>Subtotal</td>
-          <td>₹{fmt(orderData.subTotalAmt)}</td>
+          <td>₹${fmt(orderData.subTotalAmt)}</td>
         </tr>
         ${discountRow}
         <tr>
@@ -372,7 +374,7 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
         </tr>
         <tr class="grand-total-row">
           <td>Grand Total</td>
-          <td>₹{fmt(orderData.totalAmt)}</td>
+          <td>₹${fmt(orderData.totalAmt)}</td>
         </tr>
       </tbody>
     </table>
@@ -419,13 +421,20 @@ const buildInvoiceHTML = (orderData, user, address, invoiceId) => {
  * @returns {Promise<{ buffer: Buffer }>}  In-memory buffer only — no disk write.
  */
 export const generateInvoicePDF = async (orderData, user, address, invoiceId) => {
+  // ── Validation guard ──
+  if (!orderData) throw new Error('Invoice generation failed: orderData is required');
+  if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+    throw new Error('Invoice generation failed: orderData.items must be a non-empty array');
+  }
+
   console.log(`[Invoice] 🚀 Generating PDF buffer for ${invoiceId}...`);
   console.log(`[Invoice] Order data:`, JSON.stringify({
-    items: (orderData.items || []).length,
+    items: orderData.items.length,
     subTotalAmt: orderData.subTotalAmt,
+    discount: orderData.discount,
     totalAmt: orderData.totalAmt,
     paymentStatus: orderData.paymentStatus
-  }));
+  }, null, 2));
 
   // Build the HTML invoice
   const html = buildInvoiceHTML(orderData, user, address, invoiceId);

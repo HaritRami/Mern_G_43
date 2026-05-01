@@ -51,6 +51,15 @@ const SubCategoryManagement = () => {
   const API_URL = `${GLOBAL_API_URL}/sub-category`;
   const CATEGORY_API_URL = `${GLOBAL_API_URL}/category`;
 
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const token = savedUser?.tokens?.accessToken || savedUser?.data?.tokens?.accessToken;
+
+  const getAuthConfig = () => {
+    return token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : {};
+  };
+
   // Fetch subcategories with updated response structure
   const fetchSubCategories = async () => {
     setLoading(true);
@@ -127,7 +136,13 @@ const SubCategoryManagement = () => {
         response = await axios.put(
           `${API_URL}/${selectedSubCategory._id}`,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            ...getAuthConfig(),
+            headers: {
+              ...getAuthConfig().headers,
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
         toast.success("SubCategory updated successfully!");
       } else {
@@ -135,7 +150,13 @@ const SubCategoryManagement = () => {
         response = await axios.post(
           API_URL,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            ...getAuthConfig(),
+            headers: {
+              ...getAuthConfig().headers,
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
         toast.success("SubCategory created successfully!");
       }
@@ -164,7 +185,7 @@ const SubCategoryManagement = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await axios.delete(`${API_URL}/${id}`);
+        const response = await axios.delete(`${API_URL}/${id}`, getAuthConfig());
         if (response.data.success) {
           fetchSubCategories();
           Swal.fire('Deleted!', response.data.message, 'success');
@@ -211,7 +232,9 @@ const SubCategoryManagement = () => {
     try {
       setImporting(true);
       const response = await axios.post(`${API_URL}/import`, formData, {
+        ...getAuthConfig(),
         headers: {
+          ...getAuthConfig().headers,
           'Content-Type': 'multipart/form-data',
         },
       });
@@ -651,4 +674,4 @@ const SubCategoryManagement = () => {
   );
 };
 
-export default SubCategoryManagement; 
+export default SubCategoryManagement;

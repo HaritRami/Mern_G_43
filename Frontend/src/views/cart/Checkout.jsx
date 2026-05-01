@@ -766,7 +766,8 @@ const CheckoutView = () => {
                     <div className="list-group-item">
                       <div className="d-flex justify-content-between">
                         <strong>Total</strong>
-                        <strong>₹{(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}</strong>
+                        <strong>₹ {(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}</strong>
+
                       </div>
                     </div>
                   </div>
@@ -801,7 +802,7 @@ const CheckoutView = () => {
                       </>
                     ) : (
                       <>
-                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay ₹{(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}`}
+                        {formData.paymentMethod === 'cod' ? 'Confirm Order' : `Pay ₹${(totalPrice - (discount + couponDiscount)).toLocaleString('en-IN')}`}
                       </>
                     )}
                   </button>

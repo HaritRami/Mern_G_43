@@ -15,10 +15,11 @@ const productSchema = new mongoose.Schema({
         type: String,
         default: ""
     }],
-    category: [{
-        type: mongoose.Schema.ObjectId,
-        ref: 'Category'
-    }],
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: true
+    },
     subCategory: [{
         type: mongoose.Schema.ObjectId,
         ref: 'SubCategory'
@@ -29,13 +30,13 @@ const productSchema = new mongoose.Schema({
     },
     stock: {
         type: Number,
-        default: 0,
+        required: true,
         min: [0, 'Stock cannot be negative']
     },
     price: {
         type: Number,
-        default: null,
-        min: [0, 'Price cannot be negative']
+        required: true,
+        min: [1, 'Price must be greater than 0']
     },
     discount: {
         type: Number,

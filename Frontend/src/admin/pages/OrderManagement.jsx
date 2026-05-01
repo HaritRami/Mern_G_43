@@ -134,7 +134,7 @@ const OrderManagement = () => {
                                                     </td>
                                                 )}
                                                 <td>{order.paymentStatus || "-"}</td>
-                                                <td>{order.totalAmt != null ? `₹{order.totalAmt.toLocaleString('en-IN')}` : "-"}</td>
+                                                <td>{order.totalAmt != null ? `₹${Number(order.totalAmt).toLocaleString('en-IN')}` : "-"}</td>
                                                 <td>{new Date(order.createdAt).toLocaleString()}</td>
                                             </tr>
                                         ))

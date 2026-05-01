@@ -46,6 +46,15 @@ const CategoryManagement = () => {
   // Get API URL from .env
   const API_URL = `${GLOBAL_API_URL}/category`;
 
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const token = savedUser?.tokens?.accessToken || savedUser?.data?.tokens?.accessToken;
+
+  const getAuthConfig = () => {
+    return token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : {};
+  };
+
   // Fetch categories
   const fetchCategories = async () => {
     setLoading(true);
@@ -366,7 +375,9 @@ const CategoryManagement = () => {
     try {
       setImporting(true);
       const response = await axios.post(`${API_URL}/import`, formData, {
+        ...getAuthConfig(),
         headers: {
+          ...getAuthConfig().headers,
           'Content-Type': 'multipart/form-data',
         },
       });

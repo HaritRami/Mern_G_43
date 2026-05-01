@@ -1,14 +1,25 @@
 export const orderConfirmationTemplate = ({ userName, orderId, orderData, address }) => {
-  const itemsHtml = orderData.items.map(item => `
+  const fmt = (n) => {
+    const num = parseFloat(n);
+    return isNaN(num) ? '0' : num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  };
+
+  const itemsHtml = orderData.items.map(item => {
+    const price  = parseFloat(item?.productId?.price || item?.price || 0);
+    const qty    = parseInt(item?.quantity || 1);
+    const name   = item?.productId?.name || item?.name || 'Product';
+    const total  = price * qty;
+    return `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #4a5568;">
-        <strong>${item.productId.name}</strong>
+        <strong>${name}</strong>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #4a5568;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹{item.productId.price.toLocaleString('en-IN')}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹{(item.productId.price * item.quantity).toLocaleString('en-IN')}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #4a5568;">${qty}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹${fmt(price)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #4a5568;">₹${fmt(total)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <!DOCTYPE html>
@@ -73,12 +84,12 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
           <table class="totals-table">
             <tr class="totals-row">
               <td width="70%">Subtotal:</td>
-              <td width="30%">₹{orderData.subTotalAmt.toLocaleString('en-IN')}</td>
+              <td width="30%">₹${fmt(orderData.subTotalAmt)}</td>
             </tr>
             ${orderData.discount > 0 ? `
             <tr class="totals-row">
               <td width="70%">Discount:</td>
-              <td width="30%">-₹{orderData.discount.toLocaleString('en-IN')}</td>
+              <td width="30%">-₹${fmt(orderData.discount)}</td>
             </tr>` : ''}
             <tr class="totals-row">
               <td width="70%">Shipping:</td>
@@ -86,7 +97,7 @@ export const orderConfirmationTemplate = ({ userName, orderId, orderData, addres
             </tr>
             <tr class="totals-row totals-final">
               <td width="70%" style="padding-top: 12px;">Grand Total:</td>
-              <td width="30%" style="padding-top: 12px;">₹{orderData.totalAmt.toLocaleString('en-IN')}</td>
+              <td width="30%" style="padding-top: 12px;">₹${fmt(orderData.totalAmt)}</td>
             </tr>
           </table>
 

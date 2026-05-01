@@ -25,7 +25,7 @@ const ProductManagement = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    category: [],
+    category: "",
     subCategory: [],
     unit: "",
     stock: 0,
@@ -41,6 +41,9 @@ const ProductManagement = () => {
   const [detailProduct, setDetailProduct] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedBarcodeValue, setSelectedBarcodeValue] = useState('');
@@ -59,6 +62,13 @@ const ProductManagement = () => {
   const [selectedSeller, setSelectedSeller] = useState("");
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userRole = savedUser?.role || savedUser?.data?.role || "";
+  const token = savedUser?.tokens?.accessToken || savedUser?.data?.tokens?.accessToken;
+
+  const getAuthConfig = () => {
+    return token ? {
+      headers: { Authorization: `Bearer ${token}` }
+    } : {};
+  };
 
   const API_URL = `${GLOBAL_API_URL}/product`;
   const CATEGORY_API_URL = `${GLOBAL_API_URL}/category`;
@@ -70,7 +80,7 @@ const ProductManagement = () => {
       const token = savedUser?.tokens?.accessToken;
       if (!token) return;
       const response = await axios.get(`${GLOBAL_API_URL}/admin/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+        ...getAuthConfig(),
         withCredentials: true,
       });
       if (response.data?.success) {
@@ -148,13 +158,15 @@ const ProductManagement = () => {
     }
   };
 
+  // One-time initialisation: sellers + categories (no re-run on search/sort)
   useEffect(() => {
     if (userRole === "Admin") fetchSellers();
+    fetchCategories();
   }, []);
 
+  // Re-fetch products only when pagination / sorting / search / seller changes
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
   }, [currentPage, sortField, sortDirection, searchTerm, selectedSeller]);
 
   // Handle form input changes
@@ -179,6 +191,25 @@ const ProductManagement = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
+    setFormSuccess(false);
+
+    if (!formData.name || !formData.price || formData.stock === "" || !formData.category) {
+      setFormError("All fields are required");
+      return;
+    }
+
+    if (formData.price <= 0) {
+      setFormError("Price must be greater than 0");
+      return;
+    }
+
+    if (formData.stock < 0) {
+      setFormError("Stock cannot be negative");
+      return;
+    }
+
+    setSaving(true);
     try {
       const formDataToSend = new FormData();
       Object.keys(formData).forEach(key => {
@@ -198,22 +229,53 @@ const ProductManagement = () => {
         await axios.put(
           `${API_URL}/${selectedProduct._id}`,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            ...getAuthConfig(),
+            headers: {
+              ...getAuthConfig().headers,
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
-        toast.success("Product updated successfully!");
       } else {
         await axios.post(
           API_URL,
           formDataToSend,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          {
+            ...getAuthConfig(),
+            headers: {
+              ...getAuthConfig().headers,
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
-        toast.success("Product created successfully!");
       }
 
-      setShowModal(false);
+      setFormSuccess(true);
       fetchProducts();
-    } catch (error) {
-      toast.error("Error saving product!");
+      
+      setTimeout(() => {
+        setShowModal(false);
+        setFormSuccess(false);
+        setFormData({
+          name: "", category: "", subCategory: [], unit: "", stock: 0, price: 0, discount: 0, description: "", moreDetail: {}, Public: true
+        });
+        setSelectedImages([]);
+        setPreviewImages([]);
+      }, 1500);
+
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Something went wrong. Please try again.";
+      if (!err.response) {
+        setFormError("Network error. Please check your connection.");
+      } else {
+        setFormError(message);
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -231,7 +293,7 @@ const ProductManagement = () => {
       });
 
       if (result.isConfirmed) {
-        await axios.delete(`${API_URL}/${productId}`);
+        await axios.delete(`${API_URL}/${productId}`, getAuthConfig());
         fetchProducts();
         Swal.fire('Deleted!', 'Product has been deleted.', 'success');
       }
@@ -250,7 +312,13 @@ const ProductManagement = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post(`${API_URL}/import`, formData);
+      const response = await axios.post(`${API_URL}/import`, formData, {
+        ...getAuthConfig(),
+        headers: {
+          ...getAuthConfig().headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       if (response.data.success) {
         toast.success(`Successfully imported ${response.data.results.success.length} products`);
         fetchProducts();
@@ -348,8 +416,31 @@ const ProductManagement = () => {
     }
   };
 
-  const handleModalOpen = (product) => {
+  const handleModalOpen = (product = null) => {
     setSelectedProduct(product);
+    if (product) {
+      setFormData({
+        name: product.name || "",
+        category: product.category?._id || product.category || "",
+        subCategory: product.subCategory || [],
+        unit: product.unit || "",
+        stock: product.stock || 0,
+        price: product.price || 0,
+        discount: product.discount || 0,
+        description: product.description || "",
+        moreDetail: product.moreDetail || {},
+        Public: product.Public !== undefined ? product.Public : true
+      });
+      setPreviewImages(product.images || []);
+    } else {
+      setFormData({
+        name: "", category: "", subCategory: [], unit: "", stock: 0, price: 0, discount: 0, description: "", moreDetail: {}, Public: true
+      });
+      setPreviewImages([]);
+    }
+    setFormError("");
+    setFormSuccess(false);
+    setSelectedImages([]);
     setShowModal(true);
   };
 
@@ -418,7 +509,7 @@ const ProductManagement = () => {
   }, [showScanner]);
 
   return (
-    <main id="main" className="main">
+    <>
       <section className="section dashboard">
         <PageTitle title="Product Management" />
         <ToastContainer />
@@ -512,137 +603,139 @@ const ProductManagement = () => {
                   </div>
                 )}
 
-                {/* Products Table */}
-                {loading ? (
-                  <div className="text-center mt-3">
-                    <Spinner animation="border" />
-                  </div>
-                ) : products.length > 0 ? (
-                  <table className="table table-striped w-100 mt-3">
-                    <thead>
-                      <tr>
-                        <th>Images</th>
-                        <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                          Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-                        </th>
-                        <th onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>
-                          Price {sortField === 'price' && (sortDirection === 'asc' ? '↑' : '↓')}
-                        </th>
-                        <th onClick={() => handleSort('stock')} style={{ cursor: 'pointer' }}>
-                          Stock {sortField === 'stock' && (sortDirection === 'asc' ? '↑' : '↓')}
-                        </th>
-                        <th>Barcode</th>
-                        <th>QR Code</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map((product) => (
-                        <tr key={product._id}>
-                          <td>
-                            {product.images && product.images.length > 0 && (
-                              <img
-                                src={product.images[0]}
-                                alt={product.name}
-                                style={{
-                                  width: '50px',
-                                  height: '50px',
-                                  objectFit: 'cover',
-                                  borderRadius: '5px',
-                                  cursor: 'pointer'
-                                }}
-                                onClick={() => handleImageClick(product.images[0])}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/50';
-                                }}
-                              />
-                            )}
-                          </td>
-                          <td>{product.name}</td>
-                          <td>${product.price}</td>
-                          <td>{product.stock}</td>
-                          <td style={{ cursor: 'pointer' }} onClick={() => handleBarcodeClick(product.barcodeId)}>
-                            <Barcode
-                              value={product.barcodeId}
-                              width={1}
-                              height={30}
-                              fontSize={12}
-                            />
-                          </td>
-                          <td style={{ cursor: 'pointer' }} onClick={() => handleQRClick(product.barcodeId)}>
-                            <QRCode
-                              value={product.barcodeId}
-                              size={50}
-                              level="H"
-                            />
-                          </td>
-                          <td>
-                            <div className="d-flex gap-2 align-items-center">
-                              <BsPencilSquare
-                                className="text-primary"
-                                style={{ cursor: 'pointer', fontSize: '1.2rem' }}
-                                onClick={() => handleModalOpen(product)}
-                                title="Edit"
-                              />
-                              <BsTrash
-                                className="text-danger"
-                                style={{ cursor: 'pointer', fontSize: '1.2rem' }}
-                                onClick={() => handleDelete(product._id)}
-                                title="Delete"
-                              />
-                              <BsEye
-                                className="text-success"
-                                style={{ cursor: 'pointer', fontSize: '1.2rem' }}
-                                onClick={() => handleViewDetails(product)}
-                                title="View Details"
-                              />
-                            </div>
-                          </td>
+                {/* Products Table — always rendered; rows swap in-place to prevent blinking */}
+                <div style={{ position: 'relative', minHeight: '120px' }}>
+                  {loading && (
+                    <div
+                      style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.7)', zIndex: 10, borderRadius: '4px'
+                      }}
+                    >
+                      <Spinner animation="border" size="sm" />
+                      <span className="ms-2 text-muted">Loading products…</span>
+                    </div>
+                  )}
+                  {products.length > 0 ? (
+                    <table className="table table-striped w-100 mt-3" style={{ opacity: loading ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                      <thead>
+                        <tr>
+                          <th>Images</th>
+                          <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                            Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>
+                            Price {sortField === 'price' && (sortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th onClick={() => handleSort('stock')} style={{ cursor: 'pointer' }}>
+                            Stock {sortField === 'stock' && (sortDirection === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th>Barcode</th>
+                          <th>QR Code</th>
+                          <th>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-center mt-3">No products found.</p>
-                )}
+                      </thead>
+                      <tbody>
+                        {products.map((product) => (
+                          <tr key={product._id}>
+                            <td>
+                              {product.images && product.images.length > 0 && (
+                                <img
+                                  src={product.images[0]}
+                                  alt={product.name}
+                                  style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    objectFit: 'cover',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => handleImageClick(product.images[0])}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'https://via.placeholder.com/50';
+                                  }}
+                                />
+                              )}
+                            </td>
+                            <td>{product.name}</td>
+                            <td>₹{Number(product.price).toLocaleString('en-IN')}</td>
+                            <td>{product.stock}</td>
+                            <td style={{ cursor: 'pointer' }} onClick={() => handleBarcodeClick(product.barcodeId)}>
+                              <Barcode
+                                value={product.barcodeId}
+                                width={1}
+                                height={30}
+                                fontSize={12}
+                              />
+                            </td>
+                            <td style={{ cursor: 'pointer' }} onClick={() => handleQRClick(product.barcodeId)}>
+                              <QRCode
+                                value={product.barcodeId}
+                                size={50}
+                                level="H"
+                              />
+                            </td>
+                            <td>
+                              <div className="d-flex gap-2 align-items-center">
+                                <BsPencilSquare
+                                  className="text-primary"
+                                  style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                                  onClick={() => handleModalOpen(product)}
+                                  title="Edit"
+                                />
+                                <BsTrash
+                                  className="text-danger"
+                                  style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                                  onClick={() => handleDelete(product._id)}
+                                  title="Delete"
+                                />
+                                <BsEye
+                                  className="text-success"
+                                  style={{ cursor: 'pointer', fontSize: '1.2rem' }}
+                                  onClick={() => handleViewDetails(product)}
+                                  title="View Details"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    !loading && <p className="text-center mt-3">No products found.</p>
+                  )}
+                </div>
 
-                {/* Pagination Section */}
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <div>
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
-                  </div>
-                  <ul className="pagination">
-                    <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                      <button
-                        className="page-link"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </button>
-                    </li>
-                    {[...Array(totalPages)].map((_, i) => (
-                      <li key={i + 1} className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}>
+                {/* Pagination — Previous / Next only */}
+                {totalPages > 1 && (
+                  <div className="d-flex justify-content-between align-items-center mt-3">
+                    <span className="text-muted" style={{ fontSize: '0.875rem' }}>
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <ul className="pagination mb-0">
+                      <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                         <button
                           className="page-link"
-                          onClick={() => setCurrentPage(i + 1)}
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
                         >
-                          {i + 1}
+                          ← Previous
                         </button>
                       </li>
-                    ))}
-                    <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                      <button
-                        className="page-link"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </button>
-                    </li>
-                  </ul>
-                </div>
+                      <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          Next →
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -657,29 +750,39 @@ const ProductManagement = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {formError && (
+            <div className="alert alert-danger" role="alert">
+              {formError}
+            </div>
+          )}
+          {formSuccess && (
+            <div className="alert alert-success" role="alert">
+              Product saved successfully!
+            </div>
+          )}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>Name *</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
+                className={formError && !formData.name ? "is-invalid" : ""}
                 required
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Categories</Form.Label>
+              <Form.Label>Category *</Form.Label>
               <Form.Select
-                multiple
                 name="category"
                 value={formData.category}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions, option => option.value);
-                  setFormData(prev => ({ ...prev, category: values }));
-                }}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                className={formError && !formData.category ? "is-invalid" : ""}
+                required
               >
+                <option value="">Select Category</option>
                 {categories.map(category => (
                   <option key={category._id} value={category._id}>
                     {category.name}
@@ -709,23 +812,36 @@ const ProductManagement = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Price</Form.Label>
+              <Form.Label>Price *</Form.Label>
               <Form.Control
                 type="number"
                 name="price"
                 value={formData.price}
-                onChange={handleInputChange}
+                min="1"
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val < 0) return;
+                  setFormData(prev => ({ ...prev, price: val }));
+                }}
+                className={formError && formData.price <= 0 ? "is-invalid" : ""}
                 required
               />
+              <div className="form-text">Price must be greater than ₹0</div>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Stock</Form.Label>
+              <Form.Label>Stock *</Form.Label>
               <Form.Control
                 type="number"
                 name="stock"
                 value={formData.stock}
-                onChange={handleInputChange}
+                min="0"
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val < 0) return;
+                  setFormData(prev => ({ ...prev, stock: val }));
+                }}
+                className={formError && formData.stock < 0 ? "is-invalid" : ""}
                 required
               />
             </Form.Group>
@@ -751,56 +867,178 @@ const ProductManagement = () => {
               />
             </Form.Group>
 
-            <Button variant="primary" type="submit">
-              {selectedProduct ? "Update" : "Create"}
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? "Saving..." : (selectedProduct ? "Update" : "Create")}
             </Button>
           </Form>
         </Modal.Body>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Product Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+      <Modal 
+        show={showDetailModal} 
+        onHide={() => setShowDetailModal(false)} 
+        size="lg"
+        centered
+        contentClassName="border-0 shadow-lg"
+        style={{ fontFamily: "'Inter', sans-serif" }}
+      >
+        <Modal.Body className="p-0" style={{ backgroundColor: '#F9FAFB', borderRadius: '12px', overflow: 'hidden' }}>
           {detailProduct && (
-            <div>
-              <h4>{detailProduct.name}</h4>
-              <p><strong>Price:</strong> ${detailProduct.price}</p>
-              <p><strong>Stock:</strong> {detailProduct.stock}</p>
-              <p><strong>Description:</strong> {detailProduct.description}</p>
-              <div className="mt-3">
-                <h5>Images</h5>
-                <div className="d-flex gap-2 flex-wrap">
-                  {detailProduct.images.map((image, index) => (
-                    <img
-                      key={index}
-                      src={image}
-                      alt={`Product ${index + 1}`}
-                      style={{
-                        width: '100px',
-                        height: '100px',
-                        objectFit: 'cover',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => handleImageClick(image)}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/100';
-                      }}
-                    />
-                  ))}
+            <div className="row g-0">
+              {/* Left Section - Images (40%) */}
+              <div className="col-md-5 p-4 bg-white d-flex flex-column align-items-center justify-content-start border-end">
+                <div 
+                  className="main-image-container mb-3 position-relative" 
+                  style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '8px', border: '1px solid #eee' }}
+                >
+                  <img
+                    src={detailProduct.images && detailProduct.images.length > 0 ? detailProduct.images[0] : 'https://via.placeholder.com/400x400?text=No+Image'}
+                    alt={detailProduct.name}
+                    className="w-100 h-100 object-fit-cover"
+                    style={{ transition: 'transform 0.3s ease' }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    onClick={() => detailProduct.images?.length > 0 && handleImageClick(detailProduct.images[0])}
+                  />
                 </div>
+                {detailProduct.images && detailProduct.images.length > 1 && (
+                  <div className="d-flex gap-2 flex-wrap justify-content-center w-100">
+                    {detailProduct.images.slice(1, 4).map((img, idx) => (
+                      <img 
+                        key={idx} 
+                        src={img} 
+                        alt="thumbnail" 
+                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px', cursor: 'pointer', border: '1px solid #ddd' }}
+                        onClick={() => handleImageClick(img)}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/60';
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="mt-3">
-                <h5>Barcode</h5>
-                <Barcode value={detailProduct.barcodeId} />
-              </div>
-              <div className="mt-3">
-                <h5>QR Code</h5>
-                <QRCode value={detailProduct.barcodeId} size={256} />
+
+              {/* Right Section - Details (60%) */}
+              <div className="col-md-7 p-4 d-flex flex-column">
+                <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111827', marginBottom: '12px' }}>
+                  {detailProduct.name}
+                </h3>
+                
+                <div className="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                  <span style={{ fontSize: '20px', fontWeight: '600', color: '#2563EB' }}>
+                    ₹{Number(detailProduct.price || 0).toLocaleString('en-IN')}
+                  </span>
+                  <div style={{ height: '24px', width: '1px', backgroundColor: '#E5E7EB' }}></div>
+                  {detailProduct.stock > 0 ? (
+                    <span className="badge bg-success" style={{ padding: '6px 12px', fontSize: '14px', fontWeight: '500' }}>
+                      In Stock ({detailProduct.stock})
+                    </span>
+                  ) : (
+                    <span className="badge bg-danger" style={{ padding: '6px 12px', fontSize: '14px', fontWeight: '500' }}>
+                      Out of Stock
+                    </span>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <p 
+                    style={{ 
+                      color: '#6B7280', 
+                      fontSize: '15px', 
+                      lineHeight: '1.5',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      margin: 0
+                    }}
+                    title={detailProduct.description}
+                  >
+                    {detailProduct.description || "No description provided."}
+                  </p>
+                </div>
+
+                {/* Codes Section */}
+                <div className="row g-3 mb-4 flex-grow-1">
+                  <div className="col-6 d-flex flex-column align-items-center justify-content-center bg-white p-3 rounded shadow-sm border text-center">
+                    <p className="text-muted small mb-2 fw-semibold">Barcode</p>
+                    <div id="detail-barcode" style={{ cursor: 'pointer', transform: 'scale(0.8)', transformOrigin: 'top center' }} onClick={() => handleBarcodeClick(detailProduct.barcodeId)}>
+                      <Barcode value={detailProduct.barcodeId || "N/A"} width={1.5} height={40} fontSize={14} />
+                    </div>
+                    <Button variant="outline-secondary" size="sm" className="mt-2 text-nowrap" onClick={() => {
+                        const svg = document.querySelector('#detail-barcode svg');
+                        if (svg) {
+                          const svgData = new XMLSerializer().serializeToString(svg);
+                          const canvas = document.createElement('canvas');
+                          const ctx = canvas.getContext('2d');
+                          const img = new Image();
+                          img.onload = () => {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            const link = document.createElement('a');
+                            link.download = `barcode-${detailProduct.barcodeId}.png`;
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                          };
+                          img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                        }
+                      }} title="Download Barcode">
+                      <BsDownload className="me-1" /> Download
+                    </Button>
+                  </div>
+                  
+                  <div className="col-6 d-flex flex-column align-items-center justify-content-center bg-white p-3 rounded shadow-sm border text-center">
+                    <p className="text-muted small mb-2 fw-semibold">Scan to View</p>
+                    <div id="detail-qrcode" style={{ cursor: 'pointer' }} onClick={() => handleQRClick(detailProduct.barcodeId)}>
+                      <QRCode value={detailProduct.barcodeId || "N/A"} size={80} level="H" />
+                    </div>
+                    <Button variant="outline-secondary" size="sm" className="mt-2 text-nowrap" onClick={() => {
+                        const svg = document.querySelector('#detail-qrcode svg');
+                        if (svg) {
+                          const svgData = new XMLSerializer().serializeToString(svg);
+                          const canvas = document.createElement('canvas');
+                          const ctx = canvas.getContext('2d');
+                          const img = new Image();
+                          img.onload = () => {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            const link = document.createElement('a');
+                            link.download = `qrcode-${detailProduct.barcodeId}.png`;
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                          };
+                          img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+                        }
+                      }} title="Download QR Code">
+                      <BsDownload className="me-1" /> Download
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="d-flex justify-content-end gap-2 mt-auto pt-3 border-top">
+                  <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                    Close
+                  </Button>
+                  <Button variant="danger" onClick={() => {
+                      setShowDetailModal(false);
+                      handleDelete(detailProduct._id);
+                    }} title="Delete Product">
+                    <BsTrash className="me-1" /> Delete
+                  </Button>
+                  <Button variant="primary" style={{ backgroundColor: '#2563EB', borderColor: '#2563EB' }} onClick={() => {
+                      setShowDetailModal(false);
+                      handleModalOpen(detailProduct);
+                    }} title="Edit Product">
+                    <BsPencilSquare className="me-1" /> Edit
+                  </Button>
+                </div>
+
               </div>
             </div>
           )}
@@ -855,7 +1093,7 @@ const ProductManagement = () => {
           )}
         </Modal.Body>
       </Modal>
-    </main>
+    </>
   );
 };
 
